@@ -1,0 +1,25 @@
+{
+  "pluginName": "Google身份验证器",
+  "description": "googleAuthenticator 谷歌身份验证器，即谷歌动态口令，Google身份验证器Google Authenticator是谷歌推出的基于时间的一次性密码(Time-based One-time Password，简称TOTP)，只需要在手机上安装该APP，就可以生成一个随着时间变化的一次性密码，用于帐户验证。",
+  "homepage": "",
+  "author": "crazykun",
+  "main": "index.html",
+  "logo": "logo.png",
+  "preload": "preload.js",
+  "version": "1.0.0",
+  "features": [
+    {
+      "code": "googleAuthenticator",
+      "explain": "googleAuthenticator",
+      "cmds": [
+        "google",
+        "auth",
+        "TOTP",
+        "验证",
+        "验证码",
+        "googleAuth",
+        "googleAuthenticator"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+.layui-card{
+    padding-left: 20px;
+}
+.layui-layout-admin .layui-body{
+    top: 0px;
+    padding: 20px;
+    background-color: #F2F2F2;
+}
+.btns{
+    float: right;
+    margin-top: -45px;
+}
+.num{
+    font-size: 30px;
+}
+.copy-span{
+    float: right;
+}
+.edit_box{
+    padding: 10px;
+}

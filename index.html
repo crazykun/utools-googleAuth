@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>googleAuth身份验证</title>
+    <link href="layui/css/layui.css" rel="stylesheet">
+    <link href="css/index.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="layui-layout layui-layout-admin">
+
+
+        <!-- 左侧区域 -->
+        <div class="layui-side layui-bg-black left-menu">
+            <div class="layui-side-scroll">
+                <ul class="layui-nav layui-nav-tree layui-nav-side" lay-filter="test">
+                    <li class="layui-nav-item  layui-this"><a href="javascript:;">全部</a></li>
+                    <li class="layui-nav-item"><a href="javascript:;" class="add-btn">添加密钥</a></li>
+                    <li class="layui-nav-item"><a href="javascript:;" class="qrcode-btn">识别二维码</a></li>
+                </ul>
+            </div>
+        </div>
+        <!-- 左侧区域 -->
+
+        <!-- 内容主体区域 -->
+        <div class="layui-body" id="view">
+            <!-- 自动渲染数据 -->
+        </div>
+        <!-- 内容主体区域 -->
+
+        <!-- 底部固定区域 -->
+        <div class="layui-footer">
+            底部固定区域
+        </div>
+        <!-- 底部固定区域 -->
+    </div>
+
+    <!-- 添加/编辑框 -->
+    <div class="edit_box">
+        <form class="layui-form" action="">
+            <div class="layui-form-item">
+                <label class="layui-form-label">标题</label>
+                <div class="layui-input-block">
+                    <input type="text" name="title" required lay-verify="required" placeholder="请输入标题"
+                        autocomplete="off" class="layui-input">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">密码</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="password" required lay-verify="required" placeholder="请输入密码"
+                        autocomplete="off" class="layui-input">
+                </div>
+                <div class="layui-form-mid layui-word-aux">16位密码</div>
+            </div>
+            <div class="layui-form-item">
+                <blockquote class="layui-elem-quote edit_tip">
+                    otpauth://totp/JumpServer:xxx?secret=AAAAAAAAAAAAAAAA
+                    <br />
+                    &issuer=JumpServer
+                    <br />
+                    如上: AAAAAAAAAAAAAAAA为密码
+                </blockquote>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <button class="layui-btn" lay-submit lay-filter="formDemo">保存</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <!-- 添加/编辑框 -->
+
+    <canvas id="qrcanvas" style="display:none;"></canvas>
+    <script src="./layui/layui.js"></script>
+    <script>
+        //JS 
+        layui.use(['element', 'layer', 'util', 'form', 'laytpl'], function () {
+            var element = layui.element
+                , layer = layui.layer
+                , util = layui.util
+                , laytpl = layui.laytpl
+                , form = layui.form
+                , $ = layui.$;
+
+
+            // 复制验证码
+            $(document).on('click', '.copy-btn', function (e) {                
+                e.preventDefault();
+                var num = $(this).parents(".layui-elem-quote").find('.num').text();
+                utools.copyText(num)
+                layer.msg("copy success:" + num);
+            });
+     
+
+            // 渲染模版
+            var data = { //数据
+                "title": "googleAuth身份验证"
+                , "list": [
+                    { "id": 1, "name": "弹层", "time": 88, "code": 123456, "max": 88}, 
+                    { "id": 2, "name": "表单", "time": 50, "code": 888888, "max": 60}
+                ]
+            }
+            var getTpl = item.innerHTML;
+            var view = document.getElementById('view');
+            // 渲染
+            function render() {                
+                laytpl(getTpl).render(data, function (html) {
+                    view.innerHTML = html;
+                    loading();
+                });
+             
+            }
+            function loading(){
+                $(".layui-progress-bar").each(function (i, e) {
+                     // 进度条渲染
+                    var t = $(e).data('val');
+                    var id = $(e).data('id');
+                    var max = $(e).data('max');
+                    if (t > 0) {
+                        //loading
+                        var n = t, timer = setInterval(function () {
+                            n = n - 1;
+                            if (n <= 0) {
+                                n = max;
+                                clearInterval(timer);
+                                // 重新获取数据
+                            }
+                            element.progress('loading' + id, n / max * 100 + '%');
+                        }, 1000);
+                    }else{
+                        // 重新获取数据
+
+                    }                    
+                });                
+            }
+            render();
+
+            //触发事件
+            var active = {
+                setPercent: function () {
+                    //设置50%进度
+                    element.progress('demo', '100%')
+                }
+                , loading: function (othis) {
+                    var DISABLED = 'layui-btn-disabled';
+                    if (othis.hasClass(DISABLED)) return;
+
+                    //模拟loading
+                    var n = 60, timer = setInterval(function () {
+                        n = n - 1;
+                        if (n <= 0) {
+                            n = 60;
+                            clearInterval(timer);
+                            othis.removeClass(DISABLED);
+                        }
+                        console.log(n);
+                        element.progress('demo', n / 60 * 100 + '%');
+                    }, 1000);
+
+                    othis.addClass(DISABLED);
+                }
+            };
+
+            $('.site-demo-active').on('click', function () {
+                var othis = $(this), type = $(this).data('type');
+                active[type] ? active[type].call(this, othis) : '';
+                console.log(type);
+            });
+            $(".edit-btn").click(function (e) {
+                e.preventDefault();
+                layer.open({
+                    type: 1,
+                    closeBtn: 1, //不显示关闭按钮
+                    anim: 2,
+                    title: "编辑",
+                    shadeClose: true, //开启遮罩关闭
+                    content: $('.edit_box'),
+                });
+
+            });
+
+
+            $(".qrcode-btn").click(function (e) {
+                e.preventDefault();
+                utools.screenCapture(base64Str => {
+                    var qrdata = base64ToqR(base64Str);
+                    var pwd = qrdata.search(/secret=([\S]{16})&/i);
+                    if (qrdata) {
+                        console.log(qrdata);
+                    }
+                })
+
+            });
+
+            $("body").append('<canvas id="qrcanvas" style="display:none;"></canvas>');
+            function base64ToqR(data) {
+                var c = document.getElementById("qrcanvas");
+                var ctx = c.getContext("2d");
+
+                var img = new Image();
+                img.src = data;
+                img.onload = function () {
+                    $("#qrcanvas").attr("width", img.width)
+                    $("#qrcanvas").attr("height", img.height)
+                    ctx.drawImage(img, 0, 0, img.width, img.height);
+                    var imageData = ctx.getImageData(0, 0, img.width, img.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                        inversionAttempts: "dontInvert",
+                    });               
+                    if (code.data) {
+                        return code.data;
+                    } else {
+                        layer.alert("未成功识别二维码", { title: "提示", icon: 2 });
+                    }
+                };
+            }
+        });
+    </script>
+    <script src="./js/index.js"></script>
+    <script src="./js/jsQR.js"></script>
+
+    // 渲染列表数据
+    <script id="item" type="text/html">
+        {{#  layui.each(d.list, function(index, item){ }}
+        <div class="layui-card">
+            <div class="layui-card-header">{{ item.name }}</div>
+            <div class="layui-card-body item{{ item.id }}">
+                <div class="layui-elem-quote">
+                    <p class="num copy-btn">{{ item.code }}</p>
+                    <div class="layui-btn-group btns">
+                        <button type="button" class="layui-btn layui-btn-sm site-demo-active" data-type="loading"
+                            title="删除"><i class="layui-icon">&#xe640;</i></button>
+                        <button type="button" class="layui-btn layui-btn-sm edit-btn" title="编辑"><i
+                                class="layui-icon">&#xe642;</i></button>
+                        <button type="button" class="layui-btn layui-btn-sm copy-btn" title="复制"><i
+                                class="layui-icon">&#x1005;</i></button>
+                    </div>
+                    <span class="copy-span">alt + 1 复制</span>
+                </div>
+                <div class="layui-progress layui-progress-big" lay-filter="loading{{ item.id }}">
+                    <div class="layui-progress-bar" data-id="{{ item.id }}" data-max="{{ item.max }}" data-val="{{ item.time }}" lay-percent="{{ item.time }}%" data-type="loading"></div>
+                </div>
+            </div>
+        </div>     
+        {{#  }); }}
+        {{#  if(d.list.length === 0){ }}
+        <div style="padding: 15px;">无数据</div>
+        {{#  } }} 
+    </script>
+</body>
+
+</html>
