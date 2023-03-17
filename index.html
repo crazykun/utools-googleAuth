@@ -112,6 +112,9 @@
 
             // 进度条滚动
             function loading() {
+                // $(document).on('each', "layui-progress-bar", function (i, e) {
+
+                // });
                 $(".layui-progress-bar").each(function (i, e) {
                     // 进度条渲染
                     var t = $(e).data('val');
@@ -135,16 +138,20 @@
                 });
             }
 
+            // 初始化
+            // utools.db.remove('config');
+            loadConfig();
+
             // 从数据库加载配置
             function loadConfig() {
                 var result = utools.db.get("config");
-                // console.log(result)
                 if (result) {
                     config_rev = result._rev;
                     // 渲染模版数据
                     result_data = JSON.parse(result.data);
                     if (result_data) {
                         items = result_data;
+                        render();
                     } else {
                         // 配置初始化  
                         saveConfig();
@@ -154,16 +161,16 @@
 
             // 保存配置到数据库
             function saveConfig() {
-                console.log(items);
                 // 保存配置
                 utools.db.put({
                     _id: "config",
                     data: JSON.stringify(items),
                     _rev: config_rev
                 })
+                render();
             }
 
-            render();
+      
 
 
 
@@ -185,7 +192,6 @@
                     delete items[index]
                     items = items.filter(Boolean);
                     saveConfig()
-                    render();
                     layer.close(i);
                 });
             });
@@ -227,8 +233,10 @@
                     items.push(data.field);
                 }
                 saveConfig()
-                render();
                 layer.closeAll();
+                layer.msg("保存成功");
+                // 菜单选中还原
+                $('.layui-nav-item').eq(0).addClass('layui-this').siblings().removeClass('layui-this');
                 return false;
             });
 
@@ -264,12 +272,14 @@
                         }
 
                         if (pwd) {
-                            layer.alert("识别成功", { title: "提示", icon: 1 });
-                            items.push({ "id": 3, "name": name, "time": 50, "code": pwd, "max": 60 });
-                            console.log(items);
+                            items.push({"name": name, "time": 60, "password": pwd, "max": 60 });
+                            saveConfig()                                
+                            layer.msg("识别成功");
                         } else {
                             layer.alert("未成功识别二维码", { title: "提示", icon: 2 });
                         }
+                        // 菜单选中还原
+                        $('.layui-nav-item').eq(0).addClass('layui-this').siblings().removeClass('layui-this');
                     };
                 })
 
@@ -313,7 +323,7 @@
                                 <button type="button" class="layui-btn layui-btn-sm copy-btn" title="复制"><i
                                         class="layui-icon">&#x1005;</i></button>
                             </div>
-                            <span class="copy-span">alt + 1 复制</span>
+                            <span class="copy-span">alt +  <% index+1 %> 复制</span>
                         </div>
                         <div class="layui-progress layui-progress-big" lay-filter="loading<% item.id %>">
                             <div class="layui-progress-bar" data-id="<% item.id %>" data-max="<% item.max %>" data-val="<% item.time %>" lay-percent="<% item.time %>%" data-type="loading"></div>
