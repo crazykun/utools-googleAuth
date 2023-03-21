@@ -34,7 +34,8 @@
 
         <!-- 底部固定区域 -->
         <div class="layui-footer">
-            点击数字,或者使用alt+数字复制验证码
+            <span><帮助: 点击数字复制验证码></span>
+            <!-- 点击数字,或者使用alt+数字复制验证码 -->
         </div>
         <!-- 底部固定区域 -->
     </div>
@@ -61,7 +62,7 @@
                 <label class="layui-form-label">更新时间</label>
                 <div class="layui-input-block">
                     <input type="text" name="max" required lay-verify="required" placeholder="请输入更新时间"
-                        autocomplete="off" class="layui-input" value="60">
+                        autocomplete="off" class="layui-input" value="30">
                 </div>
             </div>
             <div class="layui-form-item">
@@ -81,6 +82,7 @@
 
         var items = []; //数据
         var config_rev = ""; //配置版本号
+        var timer = []; //定时器
 
 
         //JS 
@@ -109,32 +111,59 @@
                 });
 
             }
+            // 生成验证码
+            function updateCode(e, pwd, max) {
+                // var num = generateTOTP(pwd);
+                var num = new OTPAuth.TOTP({
+                    algorithm: 'SHA1',
+                    digits: 6,
+                    period: max,
+                    secret: OTPAuth.Secret.fromBase32(pwd)
+                }).generate();
+                $(e).parents(".layui-card").find('.num').text(num);
+            }
+
+            // 生成验证码倒计时
+            function updateCountdown(e, max) {
+                var now = new Date().getTime();
+                var nowtime = Math.ceil(now / 1000);
+                var left_time = Math.ceil(max - nowtime % max);
+                var index = $(e).parents(".layui-card").data('index');
+                element.progress('loading' + index, left_time / max * 100 + '%');
+                console.log(left_time);
+            }
 
             // 进度条滚动
             function loading() {
-                // $(document).on('each', "layui-progress-bar", function (i, e) {
-
-                // });
                 $(".layui-progress-bar").each(function (i, e) {
                     // 进度条渲染
-                    var t = $(e).data('val');
-                    var id = $(e).data('id');
-                    var max = $(e).data('max');
-                    if (t > 0) {
-                        //loading
-                        var n = t, timer = setInterval(function () {
-                            n = n - 1;
-                            if (n <= 0) {
-                                n = max;
-                                clearInterval(timer);
-                                // 重新获取数据
-                            }
-                            element.progress('loading' + id, n / max * 100 + '%');
-                        }, 1000);
-                    } else {
-                        // 重新获取数据
-
+                    var index = $(e).parents(".layui-card").data('index');
+                    console.log(items[index]);
+                    if (timer[index]) {
+                        clearInterval(timer[index]);
                     }
+
+                    var pwd = items[index].password;
+                    var max = items[index].max;                   
+
+                    // 设置定时器
+                    timer[index] = setInterval(function () {
+                        var num = new OTPAuth.TOTP({
+                            algorithm: 'SHA1',
+                            digits: 6,
+                            period: max,
+                            secret: OTPAuth.Secret.fromBase32(pwd)
+                        }).generate();
+                        $(e).parents(".layui-card").find('.num').text(num);
+
+                        var now = new Date().getTime();
+                        var nowtime = Math.ceil(now / 1000);
+                        var left_time = Math.ceil(max - nowtime % max);
+                        var index = $(e).parents(".layui-card").data('index');
+                        element.progress('loading' + index, left_time / max * 100 + '%');
+                        console.log(left_time);
+                    }, 500);
+
                 });
             }
 
@@ -169,9 +198,6 @@
                 })
                 render();
             }
-
-      
-
 
 
             // 复制验证码
@@ -272,8 +298,8 @@
                         }
 
                         if (pwd) {
-                            items.push({"name": name, "time": 60, "password": pwd, "max": 60 });
-                            saveConfig()                                
+                            items.push({ "name": name, "password": pwd, "max": 60 });
+                            saveConfig()
                             layer.msg("识别成功");
                         } else {
                             layer.alert("未成功识别二维码", { title: "提示", icon: 2 });
@@ -290,7 +316,7 @@
 
         });
     </script>
-    <script src="./js/index.js"></script>
+    <script src="./js/otpauth.js"></script>
     <script src="./js/jsQR.js"></script>
 
     // 渲染列表数据
@@ -314,7 +340,7 @@
                     <div class="layui-card-header"><% item.name %></div>
                     <div class="layui-card-body item<% item.id %>">
                         <div class="layui-elem-quote">
-                            <p class="num copy-btn"><% item.code %></p>
+                            <p class="num copy-btn">000000</p>
                             <div class="layui-btn-group btns">
                                 <button type="button" class="layui-btn layui-btn-sm del-btn" data-type="loading"
                                     title="删除"><i class="layui-icon">&#xe640;</i></button>
@@ -323,10 +349,10 @@
                                 <button type="button" class="layui-btn layui-btn-sm copy-btn" title="复制"><i
                                         class="layui-icon">&#x1005;</i></button>
                             </div>
-                            <span class="copy-span">alt +  <% index+1 %> 复制</span>
+                            <!-- <span class="copy-span">alt +  <% index+1 %> 复制</span> -->
                         </div>
-                        <div class="layui-progress layui-progress-big" lay-filter="loading<% item.id %>">
-                            <div class="layui-progress-bar" data-id="<% item.id %>" data-max="<% item.max %>" data-val="<% item.time %>" lay-percent="<% item.time %>%" data-type="loading"></div>
+                        <div class="layui-progress layui-progress-big" lay-filter="loading<% index %>">
+                            <div class="layui-progress-bar" data-id="<% index %>" data-max="<% item.max %>" data-val="<% item.time %>" lay-percent="<% item.time %>%" data-type="loading"></div>
                         </div>
                     </div>
                 </div>     
