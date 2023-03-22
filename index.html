@@ -111,34 +111,13 @@
                 });
 
             }
-            // 生成验证码
-            function updateCode(e, pwd, max) {
-                // var num = generateTOTP(pwd);
-                var num = new OTPAuth.TOTP({
-                    algorithm: 'SHA1',
-                    digits: 6,
-                    period: max,
-                    secret: OTPAuth.Secret.fromBase32(pwd)
-                }).generate();
-                $(e).parents(".layui-card").find('.num').text(num);
-            }
-
-            // 生成验证码倒计时
-            function updateCountdown(e, max) {
-                var now = new Date().getTime();
-                var nowtime = Math.ceil(now / 1000);
-                var left_time = Math.ceil(max - nowtime % max);
-                var index = $(e).parents(".layui-card").data('index');
-                element.progress('loading' + index, left_time / max * 100 + '%');
-                console.log(left_time);
-            }
-
+   
             // 进度条滚动
             function loading() {
                 $(".layui-progress-bar").each(function (i, e) {
                     // 进度条渲染
                     var index = $(e).parents(".layui-card").data('index');
-                    console.log(items[index]);
+                    // console.log(items[index]);
                     if (timer[index]) {
                         clearInterval(timer[index]);
                     }
