@@ -277,7 +277,7 @@
                         }
 
                         if (pwd) {
-                            items.push({ "name": name, "password": pwd, "max": 60 });
+                            items.push({ "name": name, "password": pwd, "max": 30 });
                             saveConfig()
                             layer.msg("识别成功");
                         } else {
@@ -337,6 +337,7 @@
                 </div>     
                 <%#  }); %>
         <%#  } %> 
+        <div style="height: 50px;"></div>
     </script>
 </body>
 
