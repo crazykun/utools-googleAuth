@@ -56,7 +56,7 @@
                     <input type="text" name="password" required lay-verify="required" placeholder="请输入密码"
                         autocomplete="off" class="layui-input">
                 </div>
-                <div class="layui-form-mid layui-word-aux">16位密码</div>
+                <div class="layui-form-mid layui-word-aux">密码</div>
             </div>
             <div class="layui-form-item">
                 <label class="layui-form-label">更新时间</label>
@@ -209,7 +209,7 @@
                     $('.edit_box input[name="index"]').val('');
                     $('.edit_box input[name="name"]').val('');
                     $('.edit_box input[name="password"]').val('');
-                    $('.edit_box input[name="max"]').val('60');
+                    $('.edit_box input[name="max"]').val('30');
                 } else {
                     var index = $(this).parents(".layui-card").data("index");
                     $('.edit_box input[name="index"]').val(index);
@@ -272,7 +272,7 @@
                         var pwd = '';
                         if (code) {
                             var name = code.data.match(/totp\/([\S]{1,}):/i)[1];
-                            var pwd = code.data.match(/secret=([\S]{16})&/i)[1];
+                            var pwd = code.data.match(/secret=([\S]{8,256})&/i)[1];
                             console.log(name, pwd)
                         }
 
