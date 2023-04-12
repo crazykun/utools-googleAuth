@@ -140,7 +140,7 @@
                         var left_time = Math.ceil(max - nowtime % max);
                         var index = $(e).parents(".layui-card").data('index');
                         element.progress('loading' + index, left_time / max * 100 + '%');
-                        console.log(left_time);
+                        // console.log(left_time);
                     }, 500);
 
                 });
