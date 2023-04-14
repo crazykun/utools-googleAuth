@@ -12,12 +12,8 @@
       "code": "googleAuthenticator",
       "explain": "googleAuthenticator",
       "cmds": [
-        "google",
-        "auth",
         "TOTP",
-        "验证",
         "验证码",
-        "googleAuth",
         "googleAuthenticator"
       ]
     }
