@@ -271,8 +271,18 @@
                         var name = '';
                         var pwd = '';
                         if (code) {
-                            var name = code.data.match(/totp\/([\S]{1,}):/i)[1];
-                            var pwd = code.data.match(/secret=([\S]{8,256})&/i)[1];
+                            try {
+                                var name = code.data.match(/totp\/([\S]{1,})[:\?]/i)[1];
+                            } catch (error) {
+                                var name = "undefined"
+                            }
+                            
+                            try {
+                                var pwd = code.data.match(/secret=([\S]{8,256})&/i)[1];                                
+                            } catch (error) {
+                                layer.alert("未成功识别二维码, 错误原因:" . err.message, { title: "提示", icon: 2 });
+                                return ;
+                            }
                             console.log(name, pwd)
                         }
 
