@@ -3,6 +3,7 @@ googleAuthenticator 谷歌身份验证器，即谷歌动态口令，Google身份
 
 # screenshot
 ![截图](https://raw.githubusercontent.com/crazykun/utools-googleAuth/main/img/screenshot.png)
+![截图](https://raw.githubusercontent.com/crazykun/utools-googleAuth/main/img/screenshot-set.png)
 # other
 [utools版本]googleAuth for utools
 
