@@ -21,6 +21,7 @@
                     <li class="layui-nav-item  layui-this"><a href="#">全部</a></li>
                     <li class="layui-nav-item"><a href="javascript:;" class="add-btn">添加密钥</a></li>
                     <li class="layui-nav-item"><a href="javascript:;" class="qrcode-btn">识别二维码</a></li>
+                    <li class="layui-nav-item"><a href="javascript:;" class="set-btn">设置</a></li>
                 </ul>
             </div>
         </div>
@@ -75,6 +76,28 @@
         </form>
     </div>
     <!-- 添加/编辑框 -->
+
+    <!-- 设置框 -->
+    <div class="set_box">
+        <form class="layui-form" action="" lay-filter="set_box">
+            <div class="layui-form-item">
+                <label class="layui-form-label">自动隐藏</label>
+                <div class="layui-input-block">
+                  <input type="checkbox" name="auto_close" lay-skin="switch" value="true" lay-text="ON|OFF">
+                  <div class="layui-form-mid layui-word-aux">复制后自动隐藏主窗口, 分离窗口无效</div>
+                </div>
+            </div>
+    
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <input type="hidden" name="index">
+                    <button class="layui-btn" lay-submit lay-filter="submit_set_btn">保存</button>
+                </div>
+            </div>
+
+        </form>
+    </div>
+    <!-- 设置框 -->
 
     <canvas id="qrcanvas" style="display:none;"></canvas>
     <script src="./layui/layui.js"></script>
@@ -165,6 +188,11 @@
                         saveConfig();
                     }
                 }
+
+                // 配置初始化
+                form.val('set_box', {
+                    "auto_close": utools.dbStorage.getItem("auto_close") == "true" ? true : false
+                });
             }
 
             // 保存配置到数据库
@@ -184,7 +212,12 @@
                 e.preventDefault();
                 var num = $(this).parents(".layui-elem-quote").find('.num').text();
                 utools.copyText(num)
-                layer.msg("copy success:" + num);
+                layer.msg("copy success:" + num, {time:300}, function () {
+                    if($("input[name='auto_close']").prop("checked")){
+                        // 关闭主窗口
+                        utools.hideMainWindow();
+                    }
+                });
             });
 
 
@@ -240,6 +273,32 @@
                 saveConfig()
                 layer.closeAll();
                 layer.msg("保存成功");
+                // 菜单选中还原
+                $('.layui-nav-item').eq(0).addClass('layui-this').siblings().removeClass('layui-this');
+                return false;
+            });
+
+
+            // 编辑配置
+            $(document).on('click', '.set-btn', function (e) {
+                e.preventDefault();
+                layer.open({
+                    type: 1,
+                    closeBtn: 1, //不显示关闭按钮
+                    anim: 2,
+                    title: "设置",
+                    shadeClose: true, //开启遮罩关闭
+                    area: ['300px'],
+                    content: $('.set_box'),
+                });
+
+            });
+
+            //监听提交配置
+            form.on('submit(submit_set_btn)', function (data) {
+                utools.dbStorage.setItem("auto_close", data.field.auto_close);
+                layer.closeAll();
+                layer.msg("保存配置成功");
                 // 菜单选中还原
                 $('.layui-nav-item').eq(0).addClass('layui-this').siblings().removeClass('layui-this');
                 return false;
