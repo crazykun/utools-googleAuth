@@ -87,6 +87,13 @@
                   <div class="layui-form-mid layui-word-aux">复制后自动隐藏主窗口, 分离窗口无效</div>
                 </div>
             </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">复制通知</label>
+                <div class="layui-input-block">
+                  <input type="checkbox" name="msg_close" lay-skin="switch" value="true" lay-text="ON|OFF">
+                  <div class="layui-form-mid layui-word-aux">复制成功后, 系统消息通知</div>
+                </div>
+            </div>
     
             <div class="layui-form-item">
                 <div class="layui-input-block">
@@ -106,7 +113,6 @@
         var items = []; //数据
         var config_rev = ""; //配置版本号
         var timer = []; //定时器
-
 
         //JS 
         layui.use(['element', 'layer', 'util', 'form', 'laytpl'], function () {
@@ -191,7 +197,8 @@
 
                 // 配置初始化
                 form.val('set_box', {
-                    "auto_close": utools.dbStorage.getItem("auto_close") == "true" ? true : false
+                    "auto_close": utools.dbStorage.getItem("auto_close") == "true" ? true : false,
+                    "msg_close": utools.dbStorage.getItem("msg_close") == "true" ? true : false
                 });
             }
 
@@ -211,13 +218,15 @@
             $(document).on('click', '.copy-btn', function (e) {
                 e.preventDefault();
                 var num = $(this).parents(".layui-elem-quote").find('.num').text();
-                utools.copyText(num)
-                layer.msg("copy success:" + num, {time:300}, function () {
-                    if($("input[name='auto_close']").prop("checked")){
-                        // 关闭主窗口
-                        utools.hideMainWindow();
-                    }
-                });
+                utools.copyText(num)    
+                if($("input[name='auto_close']").prop("checked")){
+                    // 关闭主窗口
+                    utools.hideMainWindow();
+                }
+                if($("input[name='msg_close']").prop("checked")){
+                    // 系统通知
+                    utools.showNotification("copy success:  " + num)
+                }
             });
 
 
@@ -297,6 +306,7 @@
             //监听提交配置
             form.on('submit(submit_set_btn)', function (data) {
                 utools.dbStorage.setItem("auto_close", data.field.auto_close);
+                utools.dbStorage.setItem("msg_close", data.field.msg_close);
                 layer.closeAll();
                 layer.msg("保存配置成功");
                 // 菜单选中还原
@@ -313,51 +323,63 @@
                 utools.screenCapture(base64Str => {
                     // 显示主窗口
                     utools.showMainWindow();
-                    var c = document.getElementById("qrcanvas");
-                    var ctx = c.getContext("2d");
-                    var img = new Image();
-                    img.src = base64Str;
-                    img.onload = function () {
-                        $("#qrcanvas").attr("width", img.width)
-                        $("#qrcanvas").attr("height", img.height)
-                        ctx.drawImage(img, 0, 0, img.width, img.height);
-                        var imageData = ctx.getImageData(0, 0, img.width, img.height);
-                        const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                            inversionAttempts: "dontInvert",
-                        });
-                        console.log(code)
-                        // 解析二维码密码
-                        var name = '';
-                        var pwd = '';
-                        if (code) {
-                            try {
-                                var name = code.data.match(/totp\/([\S]{1,})[:\?]/i)[1];
-                            } catch (error) {
-                                var name = "undefined"
-                            }
-                            
-                            try {
-                                var pwd = code.data.match(/secret=([\S]{8,256})&/i)[1];                                
-                            } catch (error) {
-                                layer.alert("未成功识别二维码, 错误原因:" . err.message, { title: "提示", icon: 2 });
-                                return ;
-                            }
-                            console.log(name, pwd)
-                        }
-
-                        if (pwd) {
-                            items.push({ "name": name, "password": pwd, "max": 30 });
-                            saveConfig()
-                            layer.msg("识别成功");
-                        } else {
-                            layer.alert("未成功识别二维码", { title: "提示", icon: 2 });
-                        }
-                        // 菜单选中还原
-                        $('.layui-nav-item').eq(0).addClass('layui-this').siblings().removeClass('layui-this');
-                    };
+                    qrcodeIdentify(base64Str);
                 })
 
             });
+            function qrcodeIdentify(base64Str){
+                var c = document.getElementById("qrcanvas");
+                var ctx = c.getContext("2d");
+                var img = new Image();
+                img.src = base64Str;
+                img.onload = function () {
+                    $("#qrcanvas").attr("width", img.width)
+                    $("#qrcanvas").attr("height", img.height)
+                    ctx.drawImage(img, 0, 0, img.width, img.height);
+                    var imageData = ctx.getImageData(0, 0, img.width, img.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                        inversionAttempts: "dontInvert",
+                    });
+                    console.log(code)
+                    // 解析二维码密码
+                    var name = '';
+                    var pwd = '';
+                    if (code) {
+                        try {
+                            var name = code.data.match(/totp\/([\S]{1,})[:\?]/i)[1];
+                        } catch (error) {
+                            var name = "undefined"
+                        }
+                        
+                        try {
+                            var pwd = code.data.match(/secret=([\S]{8,256})&/i)[1];                                
+                        } catch (error) {
+                            layer.alert("未成功识别二维码, 错误原因:" . err.message, { title: "提示", icon: 2 });
+                            return ;
+                        }
+                        console.log(name, pwd)
+                    }
+
+                    if (pwd) {
+                        items.push({ "name": name, "password": pwd, "max": 30 });
+                        saveConfig()
+                        layer.msg("识别成功");
+                    } else {
+                        layer.alert("未成功识别二维码", { title: "提示", icon: 2 });
+                    }
+                    // 菜单选中还原
+                    $('.layui-nav-item').eq(0).addClass('layui-this').siblings().removeClass('layui-this');
+                };
+            }
+
+            // 从识别二维码进入
+            utools.onPluginEnter(({code, type, payload, option}) => {
+                if (code == 'qrcode') {
+                    // 直接识别二维码
+                    qrcodeIdentify(payload);            
+                }
+            })
+
 
 
 

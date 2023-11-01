@@ -1,6 +1,6 @@
 {
   "pluginName": "Google身份验证器",
-  "description": "googleAuthenticator 谷歌身份验证器，即谷歌动态口令，Google身份验证器Google Authenticator是谷歌推出的基于时间的一次性密码(Time-based One-time Password，简称TOTP)，只需要在手机上安装该APP，就可以生成一个随着时间变化的一次性密码，用于帐户验证。",
+  "description": "googleAuthenticator 即谷歌动态口令, 也叫two-factor authentication (2FA) , otp, 双重验证 ，Google身份验证器Google Authenticator是基于时间的一次性密码，可以生成一个随着时间变化的一次性密码，用于帐户验证。",
   "homepage": "https://gitclone.com/github.com/crazykun/utools-googleAuth.git",
   "author": "crazykun",
   "main": "index.html",
@@ -12,10 +12,23 @@
       "code": "googleAuthenticator",
       "explain": "googleAuthenticator",
       "cmds": [
+        "googleAuthenticator",
         "TOTP",
-        "验证码",
-        "googleAuthenticator"
+        "OTP",
+        "MFA",
+        "验证码"
       ]
+    },
+    {
+      "code": "qrcode",
+      "explain": "通过二维码添加",
+      "cmds": [
+        {
+          "type": "img",
+          "label": "通过二维码添加"
+        }
+      ],
+      "icon": "icon.png"
     }
   ]
 }
