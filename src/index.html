@@ -94,6 +94,22 @@
                   <div class="layui-form-mid layui-word-aux">复制成功后, 系统消息通知</div>
                 </div>
             </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">导入</label>
+                <div class="layui-input-block">
+                    <button type="button" class="layui-btn" id="upload">
+                        <i class="layui-icon">&#xe67c;</i>选择文件
+                      </button>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label class="layui-form-label">导出</label>
+                <div class="layui-input-block">
+                    <button type="button" class="layui-btn" id="export">
+                        <i class="layui-icon">&#xe67d;</i>选择目录
+                      </button>
+                </div>
+            </div>
     
             <div class="layui-form-item">
                 <div class="layui-input-block">
@@ -380,9 +396,54 @@
                 }
             })
 
+            // 导出
+            $("#export").click(function (e) {
+                e.preventDefault();
+                filepath = utools.showSaveDialog({
+                    title: "导出",
+                    defaultPath: utools.getPath("downloads"),
+                    buttonLabel: "导出",
+                    filters: [{ name: 'json', extensions: ['json'] }]
+                });
+                if (filepath) {
+                    var err = window.writeFile(filepath, JSON.stringify(items));
+                    if (err) {
+                        layer.alert("导出失败, 错误原因:" . err.message, { title: "提示", icon: 2 });
+                    } else {
+                        layer.msg("导出成功");
+                    }
+                }
+            });
 
-
-
+            // 导入
+            $("#upload").click(function (e) {
+                e.preventDefault();
+                files = utools.showOpenDialog({
+                    title: "导入",
+                    defaultPath: utools.getPath("downloads"),
+                    buttonLabel: "导入",
+                    filters: [{ name: 'json', extensions: ['json'] }],
+                    properties: ['openFile']
+                });
+                if (files) {
+                    try {
+                        filedata = window.readFile(files[0]);
+                        export_items = JSON.parse(filedata);
+                        // 根据name值去重, 合并items, index 重新排序
+                        items = items.concat(export_items.filter(function (v) {
+                            return items.every(function (v2) {
+                                return v.name !== v2.name;
+                            });
+                        }));
+                       
+                        saveConfig()
+                        console.log(items)
+                        layer.msg("导入成功");
+                    } catch (error) {
+                        layer.alert("导入失败, 错误原因:" . err.message, { title: "提示", icon: 2 });
+                    }
+                }
+            });
 
         });
     </script>
