@@ -35,8 +35,7 @@
 
         <!-- 底部固定区域 -->
         <div class="layui-footer">
-            <span><帮助: 点击数字复制验证码></span>
-            <!-- 点击数字,或者使用alt+数字复制验证码 -->
+            <span><帮助: 点击数字,或者使用alt+数字复制验证码></span>
         </div>
         <!-- 底部固定区域 -->
     </div>
@@ -235,6 +234,11 @@
                 e.preventDefault();
                 var num = $(this).parents(".layui-elem-quote").find('.num').text();
                 utools.copyText(num)    
+                notice(num);                
+            });
+
+            // 通知
+            function notice(num) {
                 if($("input[name='auto_close']").prop("checked")){
                     // 关闭主窗口
                     utools.hideMainWindow();
@@ -243,7 +247,7 @@
                     // 系统通知
                     utools.showNotification("copy success:  " + num)
                 }
-            });
+            }
 
 
             // 删除
@@ -441,6 +445,20 @@
                         layer.msg("导入成功");
                     } catch (error) {
                         layer.alert("导入失败, 错误原因:" . err.message, { title: "提示", icon: 2 });
+                    }
+                }
+            });
+
+            // 使用alt+数字复制验证码
+            $(document).keydown(function (e) {
+                if (e.altKey) {
+                    e.preventDefault();            
+                    var num = e.keyCode - 48;
+                    console.log(num)
+                    if (num >= 1 && num <= 9) {
+                        var key = $(".layui-card").eq(num-1).find('.num').text();
+                        utools.copyText(key)    
+                        notice(key);
                     }
                 }
             });
