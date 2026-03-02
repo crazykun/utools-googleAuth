@@ -29,6 +29,78 @@
         var form = layui.form;
         var $ = layui.$;
 
+        // ==================== 拖拽排序 ====================
+        var dragSrcEl = null;
+        var draggedElement = null;
+
+        function handleDragStart(e) {
+            dragSrcEl = this;
+            draggedElement = $(this);
+            this.style.opacity = '0.4';
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', $(this).data('index'));
+        }
+
+        function handleDragEnd(e) {
+            this.style.opacity = '1';
+            $('.layui-card').removeClass('drag-over');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleDragEnter(e) {
+            e.preventDefault();
+            $(this).addClass('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            $(this).removeClass('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            $(this).removeClass('drag-over');
+
+            if (dragSrcEl !== this) {
+                var fromIndex = $(dragSrcEl).data('index');
+                var toIndex = $(this).data('index');
+
+                if (fromIndex !== undefined && toIndex !== undefined) {
+                    // 重新排序 items 数组
+                    var movedItem = items[fromIndex];
+                    items.splice(fromIndex, 1);
+                    items.splice(toIndex, 0, movedItem);
+
+                    // 清除缓存并保存
+                    clearTOTPCache();
+                    saveConfig();
+                    layer.msg('排序已更新', { icon: 1, time: 1000 });
+                }
+            }
+
+            return false;
+        }
+
+        // 绑定拖拽事件
+        function bindDragEvents() {
+            var cards = document.querySelectorAll('.layui-card');
+            cards.forEach(function (card) {
+                card.setAttribute('draggable', 'true');
+                card.addEventListener('dragstart', handleDragStart, false);
+                card.addEventListener('dragend', handleDragEnd, false);
+                card.addEventListener('dragover', handleDragOver, false);
+                card.addEventListener('dragenter', handleDragEnter, false);
+                card.addEventListener('dragleave', handleDragLeave, false);
+                card.addEventListener('drop', handleDrop, false);
+            });
+        }
+
         // 设置模板标签
         laytpl.config({
             open: '<%',
@@ -134,6 +206,7 @@
             laytpl(getTpl).render(items, function (html) {
                 view.innerHTML = html;
                 startGlobalTimer();
+                bindDragEvents();
             });
         }
 

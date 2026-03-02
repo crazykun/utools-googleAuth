@@ -9,6 +9,19 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+.layui-card[draggable="true"] {
+    cursor: grab;
+}
+
+.layui-card[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+.layui-card.drag-over {
+    border: 2px dashed #1E9FFF;
+    transform: scale(1.02);
+}
+
 .layui-layout-admin .layui-body {
     top: 0px;
     padding: 20px;
