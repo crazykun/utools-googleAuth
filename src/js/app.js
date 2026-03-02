@@ -239,7 +239,7 @@
                     items = result_data;
                     render();
                 } else {
-                    saveConfig(false);
+                    saveConfig(false, true); // 跳过备份
                 }
             }
 
@@ -253,10 +253,16 @@
             });
         }
 
-        function saveConfig(shouldRender) {
+        function saveConfig(shouldRender, skipBackup) {
             if (shouldRender !== false) {
                 shouldRender = true;
             }
+
+            // 在保存前创建备份（除非跳过备份）
+            if (skipBackup !== true) {
+                createBackup();
+            }
+
             var result = utools.db.put({
                 _id: "config",
                 data: JSON.stringify(items),
@@ -546,6 +552,271 @@
             return y + m + d;
         }
 
+        // ==================== 自动备份 ====================
+
+        // 生成备份ID
+        function generateBackupId() {
+            var now = new Date();
+            var y = now.getFullYear();
+            var m = String(now.getMonth() + 1).padStart(2, '0');
+            var d = String(now.getDate()).padStart(2, '0');
+            var hh = String(now.getHours()).padStart(2, '0');
+            var mm = String(now.getMinutes()).padStart(2, '0');
+            var ss = String(now.getSeconds()).padStart(2, '0');
+            return 'backup_' + y + m + d + '_' + hh + mm + ss;
+        }
+
+        // 格式化备份时间显示
+        function formatBackupTime(isoString) {
+            var date = new Date(isoString);
+            var y = date.getFullYear();
+            var m = String(date.getMonth() + 1).padStart(2, '0');
+            var d = String(date.getDate()).padStart(2, '0');
+            var hh = String(date.getHours()).padStart(2, '0');
+            var mm = String(date.getMinutes()).padStart(2, '0');
+            var ss = String(date.getSeconds()).padStart(2, '0');
+            return y + '-' + m + '-' + d + ' ' + hh + ':' + mm + ':' + ss;
+        }
+
+        // 创建备份
+        function createBackup() {
+            // 没有数据时不创建备份
+            if (items.length === 0) return;
+
+            try {
+                var backupId = generateBackupId();
+                var backupTime = new Date().toISOString();
+
+                // 备份数据
+                var backupData = {
+                    version: '1.0',
+                    backupTime: backupTime,
+                    items: JSON.parse(JSON.stringify(items)) // 深拷贝
+                };
+
+                // 保存备份数据
+                utools.dbStorage.setItem(backupId, JSON.stringify(backupData));
+
+                // 更新备份列表
+                var backupList = getBackupList();
+                backupList.push({
+                    id: backupId,
+                    time: backupTime,
+                    count: items.length
+                });
+
+                // 按时间排序（新的在前）
+                backupList.sort(function (a, b) {
+                    return new Date(b.time) - new Date(a.time);
+                });
+
+                // 保存备份列表
+                utools.dbStorage.setItem('backup_list', JSON.stringify(backupList));
+
+                // 清理旧备份（保留最新5个）
+                cleanupOldBackups(backupList);
+            } catch (e) {
+                console.error('创建备份失败:', e);
+            }
+        }
+
+        // 获取备份列表
+        function getBackupList() {
+            try {
+                var listStr = utools.dbStorage.getItem('backup_list');
+                if (listStr) {
+                    return JSON.parse(listStr);
+                }
+            } catch (e) {
+                console.error('获取备份列表失败:', e);
+            }
+            return [];
+        }
+
+        // 获取单个备份数据
+        function getBackupData(backupId) {
+            try {
+                var dataStr = utools.dbStorage.getItem(backupId);
+                if (dataStr) {
+                    return JSON.parse(dataStr);
+                }
+            } catch (e) {
+                console.error('获取备份数据失败:', e);
+            }
+            return null;
+        }
+
+        // 删除备份
+        function deleteBackup(backupId) {
+            try {
+                // 删除备份数据
+                utools.dbStorage.removeItem(backupId);
+
+                // 从列表移除
+                var backupList = getBackupList();
+                backupList = backupList.filter(function (b) {
+                    return b.id !== backupId;
+                });
+
+                // 保存更新后的列表
+                utools.dbStorage.setItem('backup_list', JSON.stringify(backupList));
+
+                return true;
+            } catch (e) {
+                console.error('删除备份失败:', e);
+                return false;
+            }
+        }
+
+        // 恢复备份
+        function restoreBackup(backupId) {
+            try {
+                var backupData = getBackupData(backupId);
+                if (!backupData || !backupData.items) {
+                    layer.alert('备份数据损坏或不存在', { title: '恢复失败', icon: 2 });
+                    return false;
+                }
+
+                // 确认对话框
+                layer.confirm(
+                    '确认从备份恢复？<br><br>' +
+                    '<span style="color:#666;">备份时间: ' + formatBackupTime(backupData.backupTime) + '</span><br>' +
+                    '<span style="color:#666;">包含项目: ' + backupData.items.length + ' 个</span><br><br>' +
+                    '<span style="color:#FF5722;">⚠ 此操作将覆盖当前配置</span>',
+                    { title: '确认恢复', icon: 3 },
+                    function (i) {
+                        // 关闭所有弹窗
+                        layer.closeAll();
+
+                        // 恢复数据
+                        items = backupData.items;
+                        clearTOTPCache();
+                        stopGlobalTimer(); // 先停止定时器
+                        clearDOMCache();
+                        saveConfig(false, true); // 跳过备份，避免循环
+
+                        // 重新渲染
+                        laytpl(getTpl).render(items, function (html) {
+                            view.innerHTML = html;
+                            startGlobalTimer();
+                            bindDragEvents();
+                            clearDOMCache();
+                        });
+
+                        layer.msg('✓ 已恢复备份', { icon: 1 });
+                    }
+                );
+
+                return true;
+            } catch (e) {
+                console.error('恢复备份失败:', e);
+                layer.alert('恢复失败: ' + e.message, { title: '错误', icon: 2 });
+                return false;
+            }
+        }
+
+        // 清理旧备份
+        function cleanupOldBackups(backupList) {
+            if (!backupList) {
+                backupList = getBackupList();
+            }
+
+            // 保留最新5个
+            if (backupList.length > 5) {
+                var toDelete = backupList.slice(5);
+                toDelete.forEach(function (backup) {
+                    utools.dbStorage.removeItem(backup.id);
+                });
+
+                // 更新列表
+                var keepList = backupList.slice(0, 5);
+                utools.dbStorage.setItem('backup_list', JSON.stringify(keepList));
+            }
+        }
+
+        // 显示备份管理弹窗
+        function showBackupManager() {
+            refreshBackupList();
+
+            // 显示弹窗
+            layerIndex = layer.open({
+                type: 1,
+                closeBtn: 1,
+                anim: 2,
+                title: '📦 备份管理',
+                shadeClose: true,
+                area: ['450px'],
+                content: $('.backup_box')
+            });
+        }
+
+        // 刷新备份列表（不重新打开弹窗）
+        function refreshBackupList() {
+            var backupList = getBackupList();
+            var $list = $('#backupList');
+            var $count = $('#backupCount');
+
+            // 更新计数
+            $count.text('共 ' + backupList.length + ' 个备份');
+
+            // 渲染列表
+            if (backupList.length === 0) {
+                $list.html('<div class="backup-empty"><i class="layui-icon">&#xe658;</i><p>暂无备份记录</p></div>');
+            } else {
+                var html = '';
+                backupList.forEach(function (backup, index) {
+                    var isLatest = index === 0;
+                    var timeStr = formatBackupTime(backup.time);
+                    var itemText = backup.count + ' 个项目';
+
+                    html += '<div class="backup-item' + (isLatest ? ' backup-current' : '') + '">';
+                    html += '<div class="backup-item-info">';
+                    html += '<div class="backup-item-time">' + timeStr + '</div>';
+                    html += '<div class="backup-item-meta">' + itemText + '</div>';
+                    html += '</div>';
+                    html += '<div class="backup-item-actions">';
+                    html += '<button type="button" class="layui-btn layui-btn-xs layui-btn-normal restore-backup-btn" data-id="' + backup.id + '">恢复</button>';
+                    html += '<button type="button" class="layui-btn layui-btn-xs layui-btn-warm export-backup-btn" data-id="' + backup.id + '">导出</button>';
+                    html += '<button type="button" class="layui-btn layui-btn-xs layui-btn-danger delete-backup-btn" data-id="' + backup.id + '">删除</button>';
+                    html += '</div>';
+                    html += '</div>';
+                });
+                $list.html(html);
+            }
+        }
+
+        // 导出单个备份
+        function exportSingleBackup(backupId) {
+            var backupData = getBackupData(backupId);
+            if (!backupData) {
+                layer.msg('备份数据不存在', { icon: 2 });
+                return;
+            }
+
+            var timeStr = formatBackupTime(backupData.backupTime).replace(/[:\s]/g, '');
+            var filepath = utools.showSaveDialog({
+                title: "导出备份",
+                defaultPath: utools.getPath("downloads") + '/googleAuth-backup-' + timeStr + '.json',
+                buttonLabel: "导出",
+                filters: [{ name: 'JSON', extensions: ['json'] }]
+            });
+
+            if (filepath) {
+                var exportData = {
+                    version: '1.0',
+                    backupTime: backupData.backupTime,
+                    count: backupData.items.length,
+                    items: backupData.items
+                };
+                var err = window.writeFile(filepath, JSON.stringify(exportData, null, 2));
+                if (err) {
+                    layer.alert("导出失败: " + err.message, { title: "错误", icon: 2 });
+                } else {
+                    layer.msg("✓ 导出成功", { icon: 1 });
+                }
+            }
+        }
+
         // ==================== 卡片操作 ====================
         function copyByIndex(index) {
             if (index < 0 || index >= items.length) return false;
@@ -706,16 +977,55 @@
             });
         });
 
-        // 导出按钮
-        $("#export").click(function (e) {
+        // 备份管理菜单
+        $(".backup-btn").click(function (e) {
+            e.preventDefault();
+            showBackupManager();
+        });
+
+        // 备份管理中的导出当前数据按钮
+        $("#backupExportBtn").click(function (e) {
             e.preventDefault();
             exportData();
         });
 
-        // 导入按钮
-        $("#upload").click(function (e) {
+        // 备份管理中的导入按钮
+        $("#backupImportBtn").click(function (e) {
             e.preventDefault();
             importData();
+        });
+
+        // 恢复备份事件（委托）
+        $(document).on('click', '.restore-backup-btn', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var backupId = $(this).data('id');
+            restoreBackup(backupId);
+        });
+
+        // 导出单个备份事件（委托）
+        $(document).on('click', '.export-backup-btn', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var backupId = $(this).data('id');
+            exportSingleBackup(backupId);
+        });
+
+        // 删除备份事件（委托）
+        $(document).on('click', '.delete-backup-btn', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var backupId = $(this).data('id');
+            layer.confirm('确认删除此备份？', { title: '确认删除', icon: 3 }, function (i) {
+                layer.close(i); // 先关闭确认对话框
+                if (deleteBackup(backupId)) {
+                    layer.msg('✓ 已删除备份', { icon: 1 });
+                    // 重新渲染备份列表（不重新打开弹窗）
+                    refreshBackupList();
+                } else {
+                    layer.msg('删除失败', { icon: 2 });
+                }
+            });
         });
 
         // ==================== 快捷键系统 ====================

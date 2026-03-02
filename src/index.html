@@ -20,6 +20,7 @@
                     <li class="layui-nav-item layui-this"><a href="#">全部</a></li>
                     <li class="layui-nav-item"><a href="javascript:;" class="add-btn">添加密钥</a></li>
                     <li class="layui-nav-item"><a href="javascript:;" class="qrcode-btn">识别二维码</a></li>
+                    <li class="layui-nav-item"><a href="javascript:;" class="backup-btn">备份管理</a></li>
                     <li class="layui-nav-item"><a href="javascript:;" class="set-btn">设置</a></li>
                 </ul>
             </div>
@@ -107,22 +108,6 @@
                 </div>
             </div>
             <div class="layui-form-item">
-                <label class="layui-form-label">导入</label>
-                <div class="layui-input-block">
-                    <button type="button" class="layui-btn" id="upload">
-                        <i class="layui-icon">&#xe67c;</i>选择文件
-                    </button>
-                </div>
-            </div>
-            <div class="layui-form-item">
-                <label class="layui-form-label">导出</label>
-                <div class="layui-input-block">
-                    <button type="button" class="layui-btn layui-btn-normal" id="export">
-                        <i class="layui-icon">&#xe67d;</i>导出数据
-                    </button>
-                </div>
-            </div>
-            <div class="layui-form-item">
                 <div class="layui-input-block">
                     <input type="hidden" name="index">
                     <button class="layui-btn" lay-submit lay-filter="submit_set_btn">保存</button>
@@ -131,6 +116,23 @@
         </form>
     </div>
     <!-- 设置框 -->
+
+    <!-- 备份管理框 -->
+    <div class="backup_box" style="display: none;">
+        <div class="backup-actions" style="margin-bottom: 15px;">
+            <button type="button" class="layui-btn layui-btn-sm" id="backupImportBtn">
+                <i class="layui-icon">&#xe67c;</i>导入数据
+            </button>
+            <button type="button" class="layui-btn layui-btn-sm layui-btn-normal" id="backupExportBtn">
+                <i class="layui-icon">&#xe67d;</i>导出当前数据
+            </button>
+            <span style="margin-left: 10px; color: #999; font-size: 12px;" id="backupCount">共 0 个备份</span>
+        </div>
+        <div class="backup-list" id="backupList">
+            <!-- 动态生成备份列表 -->
+        </div>
+    </div>
+    <!-- 备份管理框 -->
 
     <canvas id="qrcanvas" style="display:none;"></canvas>
 

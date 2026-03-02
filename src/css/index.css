@@ -176,3 +176,97 @@
         display: none;
     }
 }
+
+/* ==================== 备份管理 ==================== */
+.backup_box {
+    padding: 15px;
+    min-width: 420px;
+}
+
+.backup_box .backup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.backup_box .backup-header h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.backup_box .backup-count {
+    color: #999;
+    font-size: 12px;
+}
+
+.backup_box .backup-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.backup_box .backup-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    transition: background 0.2s;
+}
+
+.backup_box .backup-item:hover {
+    background: #f8f8f8;
+}
+
+.backup_box .backup-item-info {
+    flex: 1;
+}
+
+.backup_box .backup-item-time {
+    font-size: 13px;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.backup_box .backup-item-meta {
+    font-size: 11px;
+    color: #999;
+}
+
+.backup_box .backup-item-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.backup_box .backup-item-actions .layui-btn {
+    padding: 0 8px;
+    height: 24px;
+    line-height: 24px;
+    font-size: 12px;
+}
+
+.backup_box .backup-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+}
+
+.backup_box .backup-empty i {
+    font-size: 48px;
+    color: #ddd;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.backup_box .backup-empty p {
+    margin: 0;
+    font-size: 13px;
+}
+
+.backup_box .backup-current {
+    border-color: #5FB878;
+    background: rgba(95, 184, 120, 0.05);
+}
