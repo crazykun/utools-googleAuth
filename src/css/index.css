@@ -109,47 +109,24 @@
     float: right;
 }
 
-/* ==================== 进度条动画 ==================== */
+/* ==================== 进度条样式 ==================== */
 .layui-progress {
     border-radius: 10px;
     overflow: hidden;
 }
 
 .layui-progress-bar {
-    transition: width 0.3s linear !important;
-    background: linear-gradient(90deg, #5FB878 0%, #009688 50%, #5FB878 100%);
-    background-size: 200% 100%;
-    animation: progressGradient 2s linear infinite;
-}
-
-@keyframes progressGradient {
-    0% {
-        background-position: 0% 0%;
-    }
-    100% {
-        background-position: 200% 0%;
-    }
+    transition: width 0.3s linear, background-color 0.3s ease;
+    background: #5FB878;
 }
 
 /* 进度条颜色状态 */
 .layui-progress-bar.warning {
-    background: linear-gradient(90deg, #FFB800 0%, #FF5722 50%, #FFB800 100%);
-    background-size: 200% 100%;
+    background: #FFB800;
 }
 
 .layui-progress-bar.danger {
-    background: linear-gradient(90deg, #FF5722 0%, #FF0000 50%, #FF5722 100%);
-    background-size: 200% 100%;
-    animation: progressPulse 0.5s ease-in-out infinite;
-}
-
-@keyframes progressPulse {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.7;
-    }
+    background: #FF5722;
 }
 
 /* ==================== 快捷键帮助面板 ==================== */

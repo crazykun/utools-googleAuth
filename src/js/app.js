@@ -10,15 +10,20 @@
     var items = [];               // 数据列表
     var config_rev = "";          // 配置版本号
     var totpCache = {};           // TOTP 对象缓存
-    var animationId = null;       // requestAnimationFrame ID
-    var lastUpdateTime = 0;       // 上次更新时间戳
-    var UPDATE_INTERVAL = 500;    // 更新间隔(ms)
+    var timerId = null;           // 定时器 ID
     var selectedIndex = -1;       // 当前选中的卡片索引
     var layerIndex = null;        // 当前弹窗索引
 
     // ==================== DOM 引用 ====================
     var view = document.getElementById('view');
     var shortcutsPanel = document.getElementById('shortcutsPanel');
+
+    // ==================== DOM 缓存 ====================
+    var domCache = {};            // DOM 元素缓存
+    var settingsCache = {         // 设置状态缓存
+        auto_close: false,
+        msg_close: false
+    };
 
     // ==================== Layui 模块初始化 ====================
     layui.use(['element', 'layer', 'util', 'form', 'laytpl'], function () {
@@ -77,9 +82,11 @@
                     items.splice(fromIndex, 1);
                     items.splice(toIndex, 0, movedItem);
 
-                    // 清除缓存并保存
+                    // 清除缓存并保存（不重渲染）
                     clearTOTPCache();
-                    saveConfig();
+                    clearDOMCache();
+                    saveConfig(false);
+                    render();
                     layer.msg('排序已更新', { icon: 1, time: 1000 });
                 }
             }
@@ -141,35 +148,24 @@
         // ==================== 统一定时器 ====================
 
         function startGlobalTimer() {
-            if (animationId) {
-                cancelAnimationFrame(animationId);
+            if (timerId) {
+                clearInterval(timerId);
             }
-            lastUpdateTime = 0;
-            updateLoop();
+            timerId = setInterval(updateAllTOTP, 500);
         }
 
         function stopGlobalTimer() {
-            if (animationId) {
-                cancelAnimationFrame(animationId);
-                animationId = null;
+            if (timerId) {
+                clearInterval(timerId);
+                timerId = null;
             }
-        }
-
-        function updateLoop() {
-            var now = Date.now();
-
-            if (now - lastUpdateTime >= UPDATE_INTERVAL) {
-                lastUpdateTime = now;
-                updateAllTOTP();
-            }
-
-            animationId = requestAnimationFrame(updateLoop);
         }
 
         function updateAllTOTP() {
             var nowtime = Math.ceil(Date.now() / 1000);
+            var $cards = $('.layui-card');
 
-            $(".layui-card").each(function () {
+            $cards.each(function () {
                 var $card = $(this);
                 var index = $card.data('index');
 
@@ -183,22 +179,37 @@
                 var totp = generateTOTP(item.password, max);
                 $card.find('.num').text(totp);
 
-                // 更新倒计时显示
-                $('#countdown' + index).text(left_time + 's');
+                // 更新倒计时显示 - 使用缓存的 DOM 元素
+                if (!domCache[index]) {
+                    domCache[index] = {};
+                }
+                if (!domCache[index].$countdown) {
+                    domCache[index].$countdown = $card.find('.countdown-display');
+                }
+                domCache[index].$countdown.text(left_time + 's');
 
                 // 更新进度条
                 var progressPercent = (left_time / max * 100).toFixed(2);
                 element.progress('loading' + index, progressPercent + '%');
 
-                // 进度条颜色状态
+                // 进度条颜色状态 - 缓存状态避免不必要的 DOM 操作
                 var $progressBar = $card.find('.layui-progress-bar');
-                $progressBar.removeClass('warning danger');
-                if (left_time <= 5) {
-                    $progressBar.addClass('danger');
-                } else if (left_time <= 10) {
-                    $progressBar.addClass('warning');
+                var oldState = domCache[index].progressState || '';
+                var newState = left_time <= 5 ? 'danger' : (left_time <= 10 ? 'warning' : '');
+
+                if (oldState !== newState) {
+                    $progressBar.removeClass('warning danger');
+                    if (newState) {
+                        $progressBar.addClass(newState);
+                    }
+                    domCache[index].progressState = newState;
                 }
             });
+        }
+
+        // 清除 DOM 缓存
+        function clearDOMCache() {
+            domCache = {};
         }
 
         // ==================== 渲染函数 ====================
@@ -207,7 +218,15 @@
                 view.innerHTML = html;
                 startGlobalTimer();
                 bindDragEvents();
+                clearDOMCache();
             });
+        }
+
+        // 增量更新 - 仅更新指定的项目
+        function updateItem(index) {
+            if (index < 0 || index >= items.length) return;
+            clearDOMCache();
+            updateAllTOTP();
         }
 
         // ==================== 数据持久化 ====================
@@ -220,17 +239,24 @@
                     items = result_data;
                     render();
                 } else {
-                    saveConfig();
+                    saveConfig(false);
                 }
             }
 
+            // 缓存设置状态
+            settingsCache.auto_close = utools.dbStorage.getItem("auto_close") === "true";
+            settingsCache.msg_close = utools.dbStorage.getItem("msg_close") === "true";
+
             form.val('set_box', {
-                "auto_close": utools.dbStorage.getItem("auto_close") === "true",
-                "msg_close": utools.dbStorage.getItem("msg_close") === "true"
+                "auto_close": settingsCache.auto_close,
+                "msg_close": settingsCache.msg_close
             });
         }
 
-        function saveConfig() {
+        function saveConfig(shouldRender) {
+            if (shouldRender !== false) {
+                shouldRender = true;
+            }
             var result = utools.db.put({
                 _id: "config",
                 data: JSON.stringify(items),
@@ -239,17 +265,21 @@
             if (result) {
                 config_rev = result._rev;
             }
-            render();
+            if (shouldRender) {
+                clearDOMCache();
+                render();
+            }
         }
 
         // ==================== 通知处理 ====================
         function notice(num) {
-            if ($("input[name='auto_close']").prop("checked")) {
+            // 使用缓存的设置状态
+            if (settingsCache.auto_close) {
                 setTimeout(function () {
                     utools.hideMainWindow();
                 }, 100);
             }
-            if ($("input[name='msg_close']").prop("checked")) {
+            if (settingsCache.msg_close) {
                 utools.showNotification("✓ 已复制: " + num);
             }
         }
@@ -414,10 +444,13 @@
             return result;
         }
 
+        // 复用的隐藏元素用于 HTML 转义
+        var escapeEl = document.createElement('div');
+        escapeEl.style.display = 'none';
+
         function escapeHtml(text) {
-            var div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+            escapeEl.textContent = text;
+            return escapeEl.innerHTML;
         }
 
         function resetNavSelection() {
@@ -477,15 +510,19 @@
                     return;
                 }
 
-                // 根据 name + password 去重
+                // 使用 Set 进行 O(1) 查找优化去重
+                var existingKeys = new Set();
+                items.forEach(function (item) {
+                    existingKeys.add(item.name + '|' + item.password);
+                });
+
                 var newCount = 0;
                 import_items.forEach(function (v) {
                     if (!v.password) return;
-                    var exists = items.some(function (v2) {
-                        return v.name === v2.name && v.password === v2.password;
-                    });
-                    if (!exists) {
+                    var key = v.name + '|' + v.password;
+                    if (!existingKeys.has(key)) {
                         items.push(v);
+                        existingKeys.add(key);
                         newCount++;
                     }
                 });
@@ -525,9 +562,9 @@
             if (index < 0 || index >= items.length) return;
             var name = items[index].name;
             layer.confirm('确认删除 "<b>' + escapeHtml(name) + '</b>" ?', { title: '确认删除', icon: 3 }, function (i) {
-                delete items[index];
-                items = items.filter(Boolean);
+                items.splice(index, 1);
                 clearTOTPCache();
+                clearDOMCache();
                 saveConfig();
                 layer.close(i);
                 layer.msg("✓ 已删除", { icon: 1 });
@@ -650,6 +687,9 @@
         form.on('submit(submit_set_btn)', function (data) {
             utools.dbStorage.setItem("auto_close", data.field.auto_close);
             utools.dbStorage.setItem("msg_close", data.field.msg_close);
+            // 更新缓存
+            settingsCache.auto_close = data.field.auto_close;
+            settingsCache.msg_close = data.field.msg_close;
             layer.closeAll();
             layer.msg("✓ 设置已保存", { icon: 1 });
             resetNavSelection();
