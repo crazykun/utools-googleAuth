@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>googleAuth身份验证</title>
+    <title>Google Authenticator</title>
     <link href="layui/css/layui.css" rel="stylesheet">
     <link href="css/index.css" rel="stylesheet">
 </head>
@@ -13,12 +13,11 @@
 
     <div class="layui-layout layui-layout-admin">
 
-
         <!-- 左侧区域 -->
         <div class="layui-side layui-bg-black left-menu">
             <div class="layui-side-scroll">
                 <ul class="layui-nav layui-nav-tree layui-nav-side" lay-filter="test">
-                    <li class="layui-nav-item  layui-this"><a href="#">全部</a></li>
+                    <li class="layui-nav-item layui-this"><a href="#">全部</a></li>
                     <li class="layui-nav-item"><a href="javascript:;" class="add-btn">添加密钥</a></li>
                     <li class="layui-nav-item"><a href="javascript:;" class="qrcode-btn">识别二维码</a></li>
                     <li class="layui-nav-item"><a href="javascript:;" class="set-btn">设置</a></li>
@@ -35,9 +34,23 @@
 
         <!-- 底部固定区域 -->
         <div class="layui-footer">
-            <span><帮助: 点击数字,或者使用alt+数字复制验证码></span>
+            <span class="help-text">按 <kbd>?</kbd> 查看快捷键 | 点击数字或 Alt+数字 复制</span>
         </div>
         <!-- 底部固定区域 -->
+    </div>
+
+    <!-- 快捷键帮助面板 -->
+    <div class="shortcuts-panel" id="shortcutsPanel" style="display: none;">
+        <h4>⌨️ 快捷键</h4>
+        <div class="shortcut-item"><span>复制第N个</span><kbd>Alt</kbd> + <kbd>1-9</kbd></div>
+        <div class="shortcut-item"><span>添加密钥</span><kbd>A</kbd></div>
+        <div class="shortcut-item"><span>识别二维码</span><kbd>Q</kbd></div>
+        <div class="shortcut-item"><span>设置</span><kbd>S</kbd></div>
+        <div class="shortcut-item"><span>关闭弹窗</span><kbd>Esc</kbd></div>
+        <div class="shortcut-item"><span>显示/隐藏帮助</span><kbd>?</kbd></div>
+        <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.2); color: #aaa;">
+            点击任意处关闭
+        </div>
     </div>
 
     <!-- 添加/编辑框 -->
@@ -51,17 +64,17 @@
                 </div>
             </div>
             <div class="layui-form-item">
-                <label class="layui-form-label">密码</label>
-                <div class="layui-input-inline">
-                    <input type="text" name="password" required lay-verify="required" placeholder="请输入密码"
+                <label class="layui-form-label">密钥</label>
+                <div class="layui-input-inline" style="width: 200px;">
+                    <input type="text" name="password" required lay-verify="required" placeholder="请输入密钥(Secret)"
                         autocomplete="off" class="layui-input">
                 </div>
-                <div class="layui-form-mid layui-word-aux">密码</div>
+                <div class="layui-form-mid layui-word-aux">Base32编码的密钥</div>
             </div>
             <div class="layui-form-item">
-                <label class="layui-form-label">更新时间</label>
+                <label class="layui-form-label">周期(秒)</label>
                 <div class="layui-input-block">
-                    <input type="text" name="max" required lay-verify="required" placeholder="请输入更新时间"
+                    <input type="number" name="max" required lay-verify="required" placeholder="验证码更新周期"
                         autocomplete="off" class="layui-input" value="30">
                 </div>
             </div>
@@ -69,9 +82,9 @@
                 <div class="layui-input-block">
                     <input type="hidden" name="index">
                     <button class="layui-btn" lay-submit lay-filter="submit_btn">保存</button>
+                    <button type="reset" class="layui-btn layui-btn-primary">重置</button>
                 </div>
             </div>
-
         </form>
     </div>
     <!-- 添加/编辑框 -->
@@ -82,15 +95,15 @@
             <div class="layui-form-item">
                 <label class="layui-form-label">自动隐藏</label>
                 <div class="layui-input-block">
-                  <input type="checkbox" name="auto_close" lay-skin="switch" value="true" lay-text="ON|OFF">
-                  <div class="layui-form-mid layui-word-aux">复制后自动隐藏主窗口, 分离窗口无效</div>
+                    <input type="checkbox" name="auto_close" lay-skin="switch" value="true" lay-text="ON|OFF">
+                    <div class="layui-form-mid layui-word-aux">复制后自动隐藏主窗口</div>
                 </div>
             </div>
             <div class="layui-form-item">
                 <label class="layui-form-label">复制通知</label>
                 <div class="layui-input-block">
-                  <input type="checkbox" name="msg_close" lay-skin="switch" value="true" lay-text="ON|OFF">
-                  <div class="layui-form-mid layui-word-aux">复制成功后, 系统消息通知</div>
+                    <input type="checkbox" name="msg_close" lay-skin="switch" value="true" lay-text="ON|OFF">
+                    <div class="layui-form-mid layui-word-aux">复制成功后系统通知</div>
                 </div>
             </div>
             <div class="layui-form-item">
@@ -98,415 +111,87 @@
                 <div class="layui-input-block">
                     <button type="button" class="layui-btn" id="upload">
                         <i class="layui-icon">&#xe67c;</i>选择文件
-                      </button>
+                    </button>
                 </div>
             </div>
             <div class="layui-form-item">
                 <label class="layui-form-label">导出</label>
                 <div class="layui-input-block">
-                    <button type="button" class="layui-btn" id="export">
-                        <i class="layui-icon">&#xe67d;</i>选择目录
-                      </button>
+                    <button type="button" class="layui-btn layui-btn-normal" id="export">
+                        <i class="layui-icon">&#xe67d;</i>导出数据
+                    </button>
                 </div>
             </div>
-    
             <div class="layui-form-item">
                 <div class="layui-input-block">
                     <input type="hidden" name="index">
                     <button class="layui-btn" lay-submit lay-filter="submit_set_btn">保存</button>
                 </div>
             </div>
-
         </form>
     </div>
     <!-- 设置框 -->
 
     <canvas id="qrcanvas" style="display:none;"></canvas>
+
+    <!-- 模板 -->
     <script src="./layui/layui.js"></script>
-    <script>
-
-        var items = []; //数据
-        var config_rev = ""; //配置版本号
-        var timer = []; //定时器
-
-        //JS 
-        layui.use(['element', 'layer', 'util', 'form', 'laytpl'], function () {
-            var element = layui.element
-                , layer = layui.layer
-                , util = layui.util
-                , laytpl = layui.laytpl
-                , form = layui.form
-                , $ = layui.$;
-
-
-
-            // 设置模版标签
-            laytpl.config({
-                open: '<%',
-                close: '%>'
-            });
-            var getTpl = item.innerHTML;
-            var view = document.getElementById('view');
-            // 渲染
-            function render() {
-                laytpl(getTpl).render(items, function (html) {
-                    view.innerHTML = html;
-                    loading();
-                });
-
-            }
-   
-            // 进度条滚动
-            function loading() {
-                $(".layui-progress-bar").each(function (i, e) {
-                    // 进度条渲染
-                    var index = $(e).parents(".layui-card").data('index');
-                    // console.log(items[index]);
-                    if (timer[index]) {
-                        clearInterval(timer[index]);
-                    }
-
-                    var pwd = items[index].password;
-                    var max = items[index].max;                   
-
-                    // 设置定时器
-                    timer[index] = setInterval(function () {
-                        var num = new OTPAuth.TOTP({
-                            algorithm: 'SHA1',
-                            digits: 6,
-                            period: max,
-                            secret: OTPAuth.Secret.fromBase32(pwd)
-                        }).generate();
-                        $(e).parents(".layui-card").find('.num').text(num);
-
-                        var now = new Date().getTime();
-                        var nowtime = Math.ceil(now / 1000);
-                        var left_time = Math.ceil(max - nowtime % max);
-                        var index = $(e).parents(".layui-card").data('index');
-                        element.progress('loading' + index, left_time / max * 100 + '%');
-                        // console.log(left_time);
-                    }, 500);
-
-                });
-            }
-
-            // 初始化
-            // utools.db.remove('config');
-            loadConfig();
-
-            // 从数据库加载配置
-            function loadConfig() {
-                var result = utools.db.get("config");
-                if (result) {
-                    config_rev = result._rev;
-                    // 渲染模版数据
-                    result_data = JSON.parse(result.data);
-                    if (result_data) {
-                        items = result_data;
-                        render();
-                    } else {
-                        // 配置初始化  
-                        saveConfig();
-                    }
-                }
-
-                // 配置初始化
-                form.val('set_box', {
-                    "auto_close": utools.dbStorage.getItem("auto_close") == "true" ? true : false,
-                    "msg_close": utools.dbStorage.getItem("msg_close") == "true" ? true : false
-                });
-            }
-
-            // 保存配置到数据库
-            function saveConfig() {
-                // 保存配置
-                utools.db.put({
-                    _id: "config",
-                    data: JSON.stringify(items),
-                    _rev: config_rev
-                })
-                render();
-            }
-
-
-            // 复制验证码
-            $(document).on('click', '.copy-btn', function (e) {
-                e.preventDefault();
-                var num = $(this).parents(".layui-elem-quote").find('.num').text();
-                utools.copyText(num)    
-                notice(num);                
-            });
-
-            // 通知
-            function notice(num) {
-                if($("input[name='auto_close']").prop("checked")){
-                    // 关闭主窗口
-                    utools.hideMainWindow();
-                }
-                if($("input[name='msg_close']").prop("checked")){
-                    // 系统通知
-                    utools.showNotification("copy success:  " + num)
-                }
-            }
-
-
-            // 删除
-            $(document).on('click', '.del-btn', function (e) {
-                e.preventDefault();
-                var index = $(this).parents(".layui-card").data('index');
-                layer.confirm('确认要删除?', function (i) {
-                    //删除数组中的元素
-                    delete items[index]
-                    items = items.filter(Boolean);
-                    saveConfig()
-                    layer.close(i);
-                });
-            });
-
-            // 编辑
-            $(document).on('click', '.edit-btn, .add-btn', function (e) {
-                e.preventDefault();
-                // 清空/填充数据
-                if ($(this).hasClass("add-btn")) {
-                    $('.edit_box input[name="index"]').val('');
-                    $('.edit_box input[name="name"]').val('');
-                    $('.edit_box input[name="password"]').val('');
-                    $('.edit_box input[name="max"]').val('30');
-                } else {
-                    var index = $(this).parents(".layui-card").data("index");
-                    $('.edit_box input[name="index"]').val(index);
-                    $('.edit_box input[name="name"]').val(items[index].name);
-                    $('.edit_box input[name="password"]').val(items[index].password);
-                    $('.edit_box input[name="max"]').val(items[index].max);
-                }
-                layer.open({
-                    type: 1,
-                    closeBtn: 1, //不显示关闭按钮
-                    anim: 2,
-                    title: "编辑",
-                    shadeClose: true, //开启遮罩关闭
-                    content: $('.edit_box'),
-                });
-
-            });
-
-
-            //监听提交
-            form.on('submit(submit_btn)', function (data) {
-                index = data.field.index;
-                if (index) {
-                    items[index] = data.field;
-                } else {
-                    items.push(data.field);
-                }
-                saveConfig()
-                layer.closeAll();
-                layer.msg("保存成功");
-                // 菜单选中还原
-                $('.layui-nav-item').eq(0).addClass('layui-this').siblings().removeClass('layui-this');
-                return false;
-            });
-
-
-            // 编辑配置
-            $(document).on('click', '.set-btn', function (e) {
-                e.preventDefault();
-                layer.open({
-                    type: 1,
-                    closeBtn: 1, //不显示关闭按钮
-                    anim: 2,
-                    title: "设置",
-                    shadeClose: true, //开启遮罩关闭
-                    area: ['300px'],
-                    content: $('.set_box'),
-                });
-
-            });
-
-            //监听提交配置
-            form.on('submit(submit_set_btn)', function (data) {
-                utools.dbStorage.setItem("auto_close", data.field.auto_close);
-                utools.dbStorage.setItem("msg_close", data.field.msg_close);
-                layer.closeAll();
-                layer.msg("保存配置成功");
-                // 菜单选中还原
-                $('.layui-nav-item').eq(0).addClass('layui-this').siblings().removeClass('layui-this');
-                return false;
-            });
-
-
-            // 识别二维码
-            $("body").append('<canvas id="qrcanvas" style="display:none;"></canvas>');
-            $(".qrcode-btn").click(function (e) {
-                e.preventDefault();
-                utools.hideMainWindow()
-                utools.screenCapture(base64Str => {
-                    // 显示主窗口
-                    utools.showMainWindow();
-                    qrcodeIdentify(base64Str);
-                })
-
-            });
-            function qrcodeIdentify(base64Str){
-                var c = document.getElementById("qrcanvas");
-                var ctx = c.getContext("2d");
-                var img = new Image();
-                img.src = base64Str;
-                img.onload = function () {
-                    $("#qrcanvas").attr("width", img.width)
-                    $("#qrcanvas").attr("height", img.height)
-                    ctx.drawImage(img, 0, 0, img.width, img.height);
-                    var imageData = ctx.getImageData(0, 0, img.width, img.height);
-                    const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                        inversionAttempts: "dontInvert",
-                    });
-                    console.log(code)
-                    // 解析二维码密码
-                    var name = '';
-                    var pwd = '';
-                    if (code) {
-                        try {
-                            var name = code.data.match(/totp\/([\S]{1,})[:\?]/i)[1];
-                        } catch (error) {
-                            var name = "undefined"
-                        }
-                        
-                        try {
-                            var pwd = code.data.match(/secret=([\S]{8,256})&/i)[1];                                
-                        } catch (error) {
-                            layer.alert("未成功识别二维码, 错误原因:" . err.message, { title: "提示", icon: 2 });
-                            return ;
-                        }
-                        console.log(name, pwd)
-                    }
-
-                    if (pwd) {
-                        items.push({ "name": name, "password": pwd, "max": 30 });
-                        saveConfig()
-                        layer.msg("识别成功");
-                    } else {
-                        layer.alert("未成功识别二维码", { title: "提示", icon: 2 });
-                    }
-                    // 菜单选中还原
-                    $('.layui-nav-item').eq(0).addClass('layui-this').siblings().removeClass('layui-this');
-                };
-            }
-
-            // 从识别二维码进入
-            utools.onPluginEnter(({code, type, payload, option}) => {
-                if (code == 'qrcode') {
-                    // 直接识别二维码
-                    qrcodeIdentify(payload);            
-                }
-            })
-
-            // 导出
-            $("#export").click(function (e) {
-                e.preventDefault();
-                filepath = utools.showSaveDialog({
-                    title: "导出",
-                    defaultPath: utools.getPath("downloads"),
-                    buttonLabel: "导出",
-                    filters: [{ name: 'json', extensions: ['json'] }]
-                });
-                if (filepath) {
-                    var err = window.writeFile(filepath, JSON.stringify(items));
-                    if (err) {
-                        layer.alert("导出失败, 错误原因:" . err.message, { title: "提示", icon: 2 });
-                    } else {
-                        layer.msg("导出成功");
-                    }
-                }
-            });
-
-            // 导入
-            $("#upload").click(function (e) {
-                e.preventDefault();
-                files = utools.showOpenDialog({
-                    title: "导入",
-                    defaultPath: utools.getPath("downloads"),
-                    buttonLabel: "导入",
-                    filters: [{ name: 'json', extensions: ['json'] }],
-                    properties: ['openFile']
-                });
-                if (files) {
-                    try {
-                        filedata = window.readFile(files[0]);
-                        export_items = JSON.parse(filedata);
-                        // 根据name值去重, 合并items, index 重新排序
-                        items = items.concat(export_items.filter(function (v) {
-                            return items.every(function (v2) {
-                                return v.name !== v2.name;
-                            });
-                        }));
-                       
-                        saveConfig()
-                        console.log(items)
-                        layer.msg("导入成功");
-                    } catch (error) {
-                        layer.alert("导入失败, 错误原因:" . err.message, { title: "提示", icon: 2 });
-                    }
-                }
-            });
-
-            // 使用alt+数字复制验证码
-            $(document).keydown(function (e) {
-                if (e.altKey) {
-                    e.preventDefault();            
-                    var num = e.keyCode - 48;
-                    console.log(num)
-                    if (num >= 1 && num <= 9) {
-                        var key = $(".layui-card").eq(num-1).find('.num').text();
-                        utools.copyText(key)    
-                        notice(key);
-                    }
-                }
-            });
-
-        });
-    </script>
     <script src="./js/otpauth.js"></script>
     <script src="./js/jsQR.js"></script>
+    <script src="./js/app.js"></script>
 
-    <!--  渲染列表数据 -->
+    <!-- 渲染列表数据 -->
     <script id="item" type="text/html">
         <%#  if(d.length === 0){ %>
-        <div style="padding: 15px;">           
-                <blockquote class="layui-elem-quote">                    
-                     <h3>添加说明:</h3>
-                     <pre class="layui-code" lay-title="JavaScript" lay-skin="notepad">
-                        otpauth://totp/JumpServer:xxx?secret=AAAAAAAAAAAAAAAA&issuer=JumpServer
-                    </pre>
-                    <p>
-                        如上: AAAAAAAAAAAAAAAA为密码
-                    </p>
-                </blockquote>
-        
+        <div style="padding: 15px;">
+            <blockquote class="layui-elem-quote">
+                <h3>📋 添加说明</h3>
+                <p style="margin: 10px 0;">支持的二维码格式：</p>
+                <pre class="layui-code" lay-skin="notepad" style="padding: 10px; background: #f8f8f8;">
+otpauth://totp/账号名称?secret=XXXXXXXX&issuer=服务名</pre>
+                <p style="margin-top: 10px; color: #666;">
+                    <strong>快捷操作：</strong><br>
+                    • 点击"识别二维码"扫描屏幕二维码<br>
+                    • 点击"添加密钥"手动输入<br>
+                    • 支持 Google Authenticator、Microsoft Authenticator 等导出的数据
+                </p>
+            </blockquote>
         </div>
-        <%#  }else{ %> 
+        <%#  }else{ %>
             <%#  layui.each(d, function(index, item){ %>
-                <div class="layui-card" data-index="<% index %>">
-                    <div class="layui-card-header"><% item.name %></div>
-                    <div class="layui-card-body item<% item.id %>">
-                        <div class="layui-elem-quote">
-                            <p class="num copy-btn">000000</p>
-                            <div class="layui-btn-group btns">
-                                <button type="button" class="layui-btn layui-btn-sm del-btn" data-type="loading"
-                                    title="删除"><i class="layui-icon">&#xe640;</i></button>
-                                <button type="button" class="layui-btn layui-btn-sm edit-btn" title="编辑"><i
-                                        class="layui-icon">&#xe642;</i></button>
-                                <button type="button" class="layui-btn layui-btn-sm copy-btn" title="复制"><i
-                                        class="layui-icon">&#x1005;</i></button>
+                <div class="layui-card" data-index="<% index %>" tabindex="0">
+                    <div class="layui-card-header">
+                        <span class="card-index"><% index + 1 %></span>
+                        <span class="card-name"><% item.name %></span>
+                    </div>
+                    <div class="layui-card-body">
+                        <div class="layui-elem-quote" style="position: relative;">
+                            <p class="num copy-btn" title="点击复制">000000</p>
+                            <div class="card-info">
+                                <span class="countdown-text" id="countdown<% index %>">30s</span>
+                                <%# if(index < 9){ %>
+                                <span class="shortcut-text">Alt+<% index + 1 %></span>
+                                <%# } %>
                             </div>
-                            <!-- <span class="copy-span">alt +  <% index+1 %> 复制</span> -->
+                            <div class="layui-btn-group btns">
+                                <button type="button" class="layui-btn layui-btn-sm layui-btn-danger del-btn" title="删除">
+                                    <i class="layui-icon">&#xe640;</i>
+                                </button>
+                                <button type="button" class="layui-btn layui-btn-sm edit-btn" title="编辑">
+                                    <i class="layui-icon">&#xe642;</i>
+                                </button>
+                                <button type="button" class="layui-btn layui-btn-sm layui-btn-normal copy-btn" title="复制">
+                                    <i class="layui-icon">&#x1005;</i>
+                                </button>
+                            </div>
                         </div>
                         <div class="layui-progress layui-progress-big" lay-filter="loading<% index %>">
-                            <div class="layui-progress-bar" data-id="<% index %>" data-max="<% item.max %>" data-val="<% item.time %>" lay-percent="<% item.time %>%" data-type="loading"></div>
+                            <div class="layui-progress-bar" data-id="<% index %>" data-max="<% item.max %>" lay-percent="100%"></div>
                         </div>
                     </div>
-                </div>     
-                <%#  }); %>
-        <%#  } %> 
+                </div>
+            <%#  }); %>
+        <%#  } %>
         <div style="height: 50px;"></div>
     </script>
 </body>

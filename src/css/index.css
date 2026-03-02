@@ -1,24 +1,188 @@
-.layui-card{
+/* ==================== 布局 ==================== */
+.layui-card {
     padding-left: 20px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-.layui-layout-admin .layui-body{
+
+.layui-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.layui-layout-admin .layui-body {
     top: 0px;
     padding: 20px;
     background-color: #F2F2F2;
 }
-.btns{
+
+/* ==================== 卡片按钮 ==================== */
+.btns {
     float: right;
     margin-top: -45px;
 }
-.num{
-    font-size: 30px;
+
+.num {
+    font-size: 36px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    letter-spacing: 4px;
+    cursor: pointer;
+    transition: color 0.2s ease;
 }
-.copy-span{
+
+.num:hover {
+    color: #1E9FFF;
+}
+
+/* ==================== 快捷键提示 ==================== */
+.card-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #5FB878 0%, #009688 100%);
+    color: #fff;
+    font-size: 11px;
+    min-width: 18px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+    border-radius: 4px;
+    margin-right: 6px;
+    font-weight: 500;
+}
+
+.card-name {
+    vertical-align: middle;
+}
+
+.card-info {
     float: right;
+    margin-top: -45px;
+    margin-right: 150px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
-.edit_box{
+
+.countdown-text {
+    font-size: 12px;
+    color: #666;
+    font-family: Consolas, Monaco, monospace;
+    min-width: 28px;
+}
+
+.shortcut-text {
+    font-size: 11px;
+    color: #555;
+    background: #f0f0f0;
+    padding: 0 6px;
+    border-radius: 3px;
+    height: 28px;
+    line-height: 28px;
+    display: inline-block;
+}
+
+.copy-span {
+    float: right;
+    color: #999;
+    font-size: 12px;
+}
+
+/* ==================== 表单 ==================== */
+.edit_box {
     padding: 10px;
 }
-.layui-footer span{
+
+.layui-footer span {
     float: right;
+}
+
+/* ==================== 进度条动画 ==================== */
+.layui-progress {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.layui-progress-bar {
+    transition: width 0.3s linear !important;
+    background: linear-gradient(90deg, #5FB878 0%, #009688 50%, #5FB878 100%);
+    background-size: 200% 100%;
+    animation: progressGradient 2s linear infinite;
+}
+
+@keyframes progressGradient {
+    0% {
+        background-position: 0% 0%;
+    }
+    100% {
+        background-position: 200% 0%;
+    }
+}
+
+/* 进度条颜色状态 */
+.layui-progress-bar.warning {
+    background: linear-gradient(90deg, #FFB800 0%, #FF5722 50%, #FFB800 100%);
+    background-size: 200% 100%;
+}
+
+.layui-progress-bar.danger {
+    background: linear-gradient(90deg, #FF5722 0%, #FF0000 50%, #FF5722 100%);
+    background-size: 200% 100%;
+    animation: progressPulse 0.5s ease-in-out infinite;
+}
+
+@keyframes progressPulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* ==================== 快捷键帮助面板 ==================== */
+.shortcuts-panel {
+    position: fixed;
+    bottom: 50px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 12px;
+    z-index: 9999;
+    max-width: 280px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.shortcuts-panel h4 {
+    margin: 0 0 10px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 14px;
+}
+
+.shortcuts-panel .shortcut-item {
+    display: flex;
+    justify-content: space-between;
+    margin: 6px 0;
+}
+
+.shortcuts-panel kbd {
+    background: #333;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: monospace;
+    border: 1px solid #555;
+}
+
+/* ==================== 响应式适配 ==================== */
+@media screen and (max-width: 768px) {
+    .num {
+        font-size: 28px;
+        letter-spacing: 2px;
+    }
+
+    .shortcut-hint {
+        display: none;
+    }
 }
