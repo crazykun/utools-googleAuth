@@ -82,11 +82,15 @@
                     items.splice(fromIndex, 1);
                     items.splice(toIndex, 0, movedItem);
 
-                    // 清除缓存并保存（不重渲染）
+                    // 更新所有卡片的索引属性（不重新渲染DOM）
+                    $('.layui-card').each(function (i) {
+                        $(this).attr('data-index', i);
+                    });
+
+                    // 清除TOTP缓存并保存
                     clearTOTPCache();
                     clearDOMCache();
                     saveConfig(false);
-                    render();
                     layer.msg('排序已更新', { icon: 1, time: 1000 });
                 }
             }
@@ -98,6 +102,11 @@
         function bindDragEvents() {
             var cards = document.querySelectorAll('.layui-card');
             cards.forEach(function (card) {
+                // 检查是否已经绑定过（避免重复绑定）
+                if (card.hasAttribute('data-drag-bound')) {
+                    return;
+                }
+
                 card.setAttribute('draggable', 'true');
                 card.addEventListener('dragstart', handleDragStart, false);
                 card.addEventListener('dragend', handleDragEnd, false);
@@ -105,6 +114,9 @@
                 card.addEventListener('dragenter', handleDragEnter, false);
                 card.addEventListener('dragleave', handleDragLeave, false);
                 card.addEventListener('drop', handleDrop, false);
+
+                // 标记已绑定
+                card.setAttribute('data-drag-bound', 'true');
             });
         }
 
@@ -175,32 +187,38 @@
                 var max = parseInt(item.max) || 30;
                 var left_time = Math.ceil(max - nowtime % max);
 
-                // 更新验证码
-                var totp = generateTOTP(item.password, max);
-                $card.find('.num').text(totp);
-
-                // 更新倒计时显示 - 使用缓存的 DOM 元素
+                // 初始化缓存
                 if (!domCache[index]) {
                     domCache[index] = {};
                 }
-                if (!domCache[index].$countdown) {
-                    domCache[index].$countdown = $card.find('.countdown-text');
+
+                // 更新验证码 - 缓存DOM元素
+                if (!domCache[index].$num) {
+                    domCache[index].$num = $card.find('.num');
                 }
-                domCache[index].$countdown.text(left_time + 's');
+                var totp = generateTOTP(item.password, max);
+                domCache[index].$num.text(totp);
 
-                // 更新进度条
+                // 更新进度条 - 添加变化检测
                 var progressPercent = (left_time / max * 100).toFixed(2);
-                element.progress('loading' + index, progressPercent + '%');
+                var oldPercent = domCache[index].progressPercent || '';
 
-                // 进度条颜色状态 - 缓存状态避免不必要的 DOM 操作
-                var $progressBar = $card.find('.layui-progress-bar');
+                if (oldPercent !== progressPercent) {
+                    element.progress('loading' + index, progressPercent + '%');
+                    domCache[index].progressPercent = progressPercent;
+                }
+
+                // 进度条颜色状态 - 缓存DOM元素和状态
+                if (!domCache[index].$progressBar) {
+                    domCache[index].$progressBar = $card.find('.layui-progress-bar');
+                }
                 var oldState = domCache[index].progressState || '';
                 var newState = left_time <= 5 ? 'danger' : (left_time <= 10 ? 'warning' : '');
 
                 if (oldState !== newState) {
-                    $progressBar.removeClass('warning danger');
+                    domCache[index].$progressBar.removeClass('warning danger');
                     if (newState) {
-                        $progressBar.addClass(newState);
+                        domCache[index].$progressBar.addClass(newState);
                     }
                     domCache[index].progressState = newState;
                 }
@@ -220,13 +238,6 @@
                 bindDragEvents();
                 clearDOMCache();
             });
-        }
-
-        // 增量更新 - 仅更新指定的项目
-        function updateItem(index) {
-            if (index < 0 || index >= items.length) return;
-            clearDOMCache();
-            updateAllTOTP();
         }
 
         // ==================== 数据持久化 ====================
@@ -546,36 +557,41 @@
         }
 
         function formatDate(date) {
+            return formatDateTime(date, 'ymd');
+        }
+
+        // 日期时间格式化辅助函数
+        function pad2(value) {
+            return String(value).padStart(2, '0');
+        }
+
+        function formatDateTime(date, format) {
             var y = date.getFullYear();
-            var m = String(date.getMonth() + 1).padStart(2, '0');
-            var d = String(date.getDate()).padStart(2, '0');
-            return y + m + d;
+            var m = pad2(date.getMonth() + 1);
+            var d = pad2(date.getDate());
+            var hh = pad2(date.getHours());
+            var mm = pad2(date.getMinutes());
+            var ss = pad2(date.getSeconds());
+
+            if (format === 'ymd') {
+                return y + m + d;
+            } else if (format === 'ymd_hms') {
+                return y + m + d + '_' + hh + mm + ss;
+            } else if (format === 'ymd_hms_colon') {
+                return y + '-' + m + '-' + d + ' ' + hh + ':' + mm + ':' + ss;
+            }
         }
 
         // ==================== 自动备份 ====================
 
         // 生成备份ID
         function generateBackupId() {
-            var now = new Date();
-            var y = now.getFullYear();
-            var m = String(now.getMonth() + 1).padStart(2, '0');
-            var d = String(now.getDate()).padStart(2, '0');
-            var hh = String(now.getHours()).padStart(2, '0');
-            var mm = String(now.getMinutes()).padStart(2, '0');
-            var ss = String(now.getSeconds()).padStart(2, '0');
-            return 'backup_' + y + m + d + '_' + hh + mm + ss;
+            return 'backup_' + formatDateTime(new Date(), 'ymd_hms');
         }
 
         // 格式化备份时间显示
         function formatBackupTime(isoString) {
-            var date = new Date(isoString);
-            var y = date.getFullYear();
-            var m = String(date.getMonth() + 1).padStart(2, '0');
-            var d = String(date.getDate()).padStart(2, '0');
-            var hh = String(date.getHours()).padStart(2, '0');
-            var mm = String(date.getMinutes()).padStart(2, '0');
-            var ss = String(date.getSeconds()).padStart(2, '0');
-            return y + '-' + m + '-' + d + ' ' + hh + ':' + mm + ':' + ss;
+            return formatDateTime(new Date(isoString), 'ymd_hms_colon');
         }
 
         // 创建备份
@@ -763,25 +779,29 @@
             if (backupList.length === 0) {
                 $list.html('<div class="backup-empty"><i class="layui-icon">&#xe658;</i><p>暂无备份记录</p></div>');
             } else {
-                var html = '';
+                // 使用数组收集HTML片段，提高效率
+                var htmlParts = [];
                 backupList.forEach(function (backup, index) {
                     var isLatest = index === 0;
                     var timeStr = formatBackupTime(backup.time);
                     var itemText = backup.count + ' 个项目';
+                    var currentClass = isLatest ? ' backup-current' : '';
 
-                    html += '<div class="backup-item' + (isLatest ? ' backup-current' : '') + '">';
-                    html += '<div class="backup-item-info">';
-                    html += '<div class="backup-item-time">' + timeStr + '</div>';
-                    html += '<div class="backup-item-meta">' + itemText + '</div>';
-                    html += '</div>';
-                    html += '<div class="backup-item-actions">';
-                    html += '<button type="button" class="layui-btn layui-btn-xs layui-btn-normal restore-backup-btn" data-id="' + backup.id + '">恢复</button>';
-                    html += '<button type="button" class="layui-btn layui-btn-xs layui-btn-warm export-backup-btn" data-id="' + backup.id + '">导出</button>';
-                    html += '<button type="button" class="layui-btn layui-btn-xs layui-btn-danger delete-backup-btn" data-id="' + backup.id + '">删除</button>';
-                    html += '</div>';
-                    html += '</div>';
+                    htmlParts.push(
+                        '<div class="backup-item' + currentClass + '">',
+                        '<div class="backup-item-info">',
+                        '<div class="backup-item-time">' + timeStr + '</div>',
+                        '<div class="backup-item-meta">' + itemText + '</div>',
+                        '</div>',
+                        '<div class="backup-item-actions">',
+                        '<button type="button" class="layui-btn layui-btn-xs layui-btn-normal restore-backup-btn" data-id="' + backup.id + '">恢复</button>',
+                        '<button type="button" class="layui-btn layui-btn-xs layui-btn-warm export-backup-btn" data-id="' + backup.id + '">导出</button>',
+                        '<button type="button" class="layui-btn layui-btn-xs layui-btn-danger delete-backup-btn" data-id="' + backup.id + '">删除</button>',
+                        '</div>',
+                        '</div>'
+                    );
                 });
-                $list.html(html);
+                $list.html(htmlParts.join(''));
             }
         }
 
@@ -865,7 +885,8 @@
         // 复制验证码
         $(document).on('click', '.copy-btn', function (e) {
             e.preventDefault();
-            var num = $(this).parents(".layui-elem-quote").find('.num').text();
+            var $card = $(this).closest('.layui-card');
+            var num = $card.find('.num').text();
             if (num && num !== 'ERROR') {
                 utools.copyText(num);
                 notice(num);

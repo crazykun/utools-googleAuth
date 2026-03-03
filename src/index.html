@@ -166,27 +166,30 @@ otpauth://totp/账号名称?secret=XXXXXXXX&issuer=服务名</pre>
                         <span class="card-name"><% item.name %></span>
                     </div>
                     <div class="layui-card-body">
-                        <div class="layui-elem-quote" style="position: relative;">
-                            <p class="num copy-btn" title="点击复制">000000</p>
-                            <div class="card-info">
-                                <span class="countdown-text" id="countdown<% index %>"><% item.max || 30 %>s</span>
+                        <div class="card-content">
+                            <div class="card-left">
                                 <%# if(index < 9){ %>
                                 <span class="shortcut-text">Alt+<% index + 1 %></span>
                                 <%# } %>
                             </div>
-                            <div class="layui-btn-group btns">
-                                <button type="button" class="layui-btn layui-btn-sm layui-btn-danger del-btn" title="删除">
-                                    <i class="layui-icon">&#xe640;</i>
-                                </button>
-                                <button type="button" class="layui-btn layui-btn-sm edit-btn" title="编辑">
-                                    <i class="layui-icon">&#xe642;</i>
-                                </button>
-                                <button type="button" class="layui-btn layui-btn-sm layui-btn-normal copy-btn" title="复制">
-                                    <i class="layui-icon">&#x1005;</i>
-                                </button>
+                            <div class="card-center">
+                                <p class="num copy-btn" title="点击复制">000000</p>
+                            </div>
+                            <div class="card-right">
+                                <div class="layui-btn-group btns">
+                                    <button type="button" class="layui-btn layui-btn-sm layui-btn-danger del-btn" title="删除">
+                                        <i class="layui-icon">&#xe640;</i>
+                                    </button>
+                                    <button type="button" class="layui-btn layui-btn-sm edit-btn" title="编辑">
+                                        <i class="layui-icon">&#xe642;</i>
+                                    </button>
+                                    <button type="button" class="layui-btn layui-btn-sm layui-btn-normal copy-btn" title="复制">
+                                        <i class="layui-icon">&#x1005;</i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                        <div class="layui-progress layui-progress-big" lay-filter="loading<% index %>">
+                        <div class="layui-progress" lay-filter="loading<% index %>">
                             <div class="layui-progress-bar" data-id="<% index %>" data-max="<% item.max %>" lay-percent="100%"></div>
                         </div>
                     </div>
