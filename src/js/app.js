@@ -87,9 +87,8 @@
                         $(this).attr('data-index', i);
                     });
 
-                    // 清除TOTP缓存并保存
-                    clearTOTPCache();
-                    clearDOMCache();
+                    // 只清除DOM状态缓存，保留TOTP缓存（密钥未变）
+                    domCache = {};
                     saveConfig(false);
                     layer.msg('排序已更新', { icon: 1, time: 1000 });
                 }
@@ -199,24 +198,24 @@
                 var totp = generateTOTP(item.password, max);
                 domCache[index].$num.text(totp);
 
-                // 更新进度条 - 添加变化检测
-                var progressPercent = (left_time / max * 100).toFixed(2);
-                var oldPercent = domCache[index].progressPercent || '';
+                // 更新进度条 - 添加变化检测（使用整数比较避免浮点精度问题）
+                var progressValue = Math.floor(left_time / max * 100);
+                var oldProgressValue = domCache[index].progressValue;
 
-                if (oldPercent !== progressPercent) {
-                    element.progress('loading' + index, progressPercent + '%');
-                    domCache[index].progressPercent = progressPercent;
+                if (oldProgressValue !== progressValue) {
+                    element.progress('loading' + index, progressValue + '%');
+                    domCache[index].progressValue = progressValue;
                 }
 
                 // 进度条颜色状态 - 缓存DOM元素和状态
                 if (!domCache[index].$progressBar) {
                     domCache[index].$progressBar = $card.find('.layui-progress-bar');
                 }
-                var oldState = domCache[index].progressState || '';
-                var newState = left_time <= 5 ? 'danger' : (left_time <= 10 ? 'warning' : '');
+                var oldState = domCache[index].progressState || PROGRESS_STATE.NORMAL;
+                var newState = left_time <= 5 ? PROGRESS_STATE.DANGER : (left_time <= 10 ? PROGRESS_STATE.WARNING : PROGRESS_STATE.NORMAL);
 
                 if (oldState !== newState) {
-                    domCache[index].$progressBar.removeClass('warning danger');
+                    domCache[index].$progressBar.removeClass(PROGRESS_STATE.WARNING + ' ' + PROGRESS_STATE.DANGER);
                     if (newState) {
                         domCache[index].$progressBar.addClass(newState);
                     }
@@ -474,6 +473,21 @@
             $('.layui-nav-item').eq(0).addClass('layui-this').siblings().removeClass('layui-this');
         }
 
+        // ==================== 常量定义 ====================
+        // 进度条状态常量
+        var PROGRESS_STATE = {
+            NORMAL: '',
+            WARNING: 'warning',
+            DANGER: 'danger'
+        };
+
+        // 日期格式常量
+        var DATE_FORMAT = {
+            YMD: 'ymd',
+            YMD_HMS: 'ymd_hms',
+            YMD_HMS_COLON: 'ymd_hms_colon'
+        };
+
         // ==================== 导入导出 ====================
         function exportData() {
             if (items.length === 0) {
@@ -557,7 +571,7 @@
         }
 
         function formatDate(date) {
-            return formatDateTime(date, 'ymd');
+            return formatDateTime(date, DATE_FORMAT.YMD);
         }
 
         // 日期时间格式化辅助函数
@@ -573,11 +587,11 @@
             var mm = pad2(date.getMinutes());
             var ss = pad2(date.getSeconds());
 
-            if (format === 'ymd') {
+            if (format === DATE_FORMAT.YMD) {
                 return y + m + d;
-            } else if (format === 'ymd_hms') {
+            } else if (format === DATE_FORMAT.YMD_HMS) {
                 return y + m + d + '_' + hh + mm + ss;
-            } else if (format === 'ymd_hms_colon') {
+            } else if (format === DATE_FORMAT.YMD_HMS_COLON) {
                 return y + '-' + m + '-' + d + ' ' + hh + ':' + mm + ':' + ss;
             }
         }
@@ -586,12 +600,12 @@
 
         // 生成备份ID
         function generateBackupId() {
-            return 'backup_' + formatDateTime(new Date(), 'ymd_hms');
+            return 'backup_' + formatDateTime(new Date(), DATE_FORMAT.YMD_HMS);
         }
 
         // 格式化备份时间显示
         function formatBackupTime(isoString) {
-            return formatDateTime(new Date(isoString), 'ymd_hms_colon');
+            return formatDateTime(new Date(isoString), DATE_FORMAT.YMD_HMS_COLON);
         }
 
         // 创建备份
@@ -618,12 +632,13 @@
                 backupList.push({
                     id: backupId,
                     time: backupTime,
+                    timestamp: new Date(backupTime).getTime(),
                     count: items.length
                 });
 
-                // 按时间排序（新的在前）
+                // 按时间排序（新的在前）- 使用缓存的时间戳
                 backupList.sort(function (a, b) {
-                    return new Date(b.time) - new Date(a.time);
+                    return (b.timestamp || 0) - (a.timestamp || 0);
                 });
 
                 // 保存备份列表
