@@ -251,8 +251,28 @@ body {
 }
 
 /* ==================== 表单 ==================== */
-.edit_box {
-    padding: 10px;
+.edit_box,
+.set_box {
+    padding: 15px;
+    min-width: 320px;
+}
+
+.set_box .layui-form-item {
+    margin-bottom: 15px;
+}
+
+.set_box .layui-form-label {
+    width: 80px;
+    padding: 9px 10px;
+}
+
+.set_box .layui-input-block {
+    margin-left: 110px;
+    min-height: 30px;
+}
+
+.set_box .layui-form-switch {
+    margin-top: 5px;
 }
 
 /* ==================== 进度条样式 ==================== */

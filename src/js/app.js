@@ -82,13 +82,9 @@
                     items.splice(fromIndex, 1);
                     items.splice(toIndex, 0, movedItem);
 
-                    // 更新所有卡片的索引属性（不重新渲染DOM）
-                    $('.layui-card').each(function (i) {
-                        $(this).attr('data-index', i);
-                    });
-
-                    // 只清除DOM状态缓存，保留TOTP缓存（密钥未变）
-                    domCache = {};
+                    // 重新渲染以更新所有显示
+                    clearTOTPCache();
+                    render();
                     saveConfig(false);
                     layer.msg('排序已更新', { icon: 1, time: 1000 });
                 }
@@ -175,12 +171,13 @@
         function updateAllTOTP() {
             var nowtime = Math.ceil(Date.now() / 1000);
             var $cards = $('.layui-card');
+            var cardCount = $cards.length;
 
-            $cards.each(function () {
-                var $card = $(this);
+            for (var i = 0; i < cardCount; i++) {
+                var $card = $($cards[i]);
                 var index = $card.data('index');
 
-                if (index === undefined || !items[index]) return;
+                if (index === undefined || !items[index]) continue;
 
                 var item = items[index];
                 var max = parseInt(item.max) || 30;
@@ -221,12 +218,37 @@
                     }
                     domCache[index].progressState = newState;
                 }
-            });
+            }
         }
 
         // 清除 DOM 缓存
         function clearDOMCache() {
             domCache = {};
+        }
+
+        // 更新卡片显示（序号、快捷键提示、进度条filter）
+        function updateCardsDisplay() {
+            $('.layui-card').each(function (i) {
+                var $card = $(this);
+                $card.attr('data-index', i);
+                // 更新序号
+                $card.find('.card-index').text(i + 1);
+                // 更新快捷键提示
+                var $shortcutText = $card.find('.shortcut-text');
+                if (i < 9) {
+                    $shortcutText.text('Alt+' + (i + 1));
+                    $shortcutText.show();
+                } else {
+                    $shortcutText.hide();
+                }
+                // 更新进度条的 lay-filter 和 data-id
+                var $progress = $card.find('.layui-progress');
+                var oldFilter = $progress.attr('lay-filter');
+                if (oldFilter) {
+                    $progress.attr('lay-filter', 'loading' + i);
+                }
+                $card.find('.layui-progress-bar').attr('data-id', i);
+            });
         }
 
         // ==================== 渲染函数 ====================
@@ -453,7 +475,7 @@
                 // 尝试提取名称
                 var nameMatch = uri.match(/totp\/([^?]+)/i);
                 if (nameMatch) {
-                    result.name = decodeURIComponent(nameMatch[1].replace(/:/g, ':'));
+                    result.name = decodeURIComponent(nameMatch[1]);
                 }
             }
 
@@ -469,8 +491,9 @@
             return escapeEl.innerHTML;
         }
 
+        // 空函数 - 左侧导航已移除，保留函数以避免调用报错
         function resetNavSelection() {
-            $('.layui-nav-item').eq(0).addClass('layui-this').siblings().removeClass('layui-this');
+            // No-op: 左侧导航已移除
         }
 
         // ==================== 常量定义 ====================
@@ -598,11 +621,6 @@
 
         // ==================== 自动备份 ====================
 
-        // 生成备份ID
-        function generateBackupId() {
-            return 'backup_' + formatDateTime(new Date(), DATE_FORMAT.YMD_HMS);
-        }
-
         // 格式化备份时间显示
         function formatBackupTime(isoString) {
             return formatDateTime(new Date(isoString), DATE_FORMAT.YMD_HMS_COLON);
@@ -614,8 +632,10 @@
             if (items.length === 0) return;
 
             try {
-                var backupId = generateBackupId();
-                var backupTime = new Date().toISOString();
+                // 只创建一次 Date 对象并复用
+                var now = new Date();
+                var backupTime = now.toISOString();
+                var backupId = 'backup_' + formatDateTime(now, DATE_FORMAT.YMD_HMS);
 
                 // 备份数据
                 var backupData = {
@@ -632,7 +652,7 @@
                 backupList.push({
                     id: backupId,
                     time: backupTime,
-                    timestamp: new Date(backupTime).getTime(),
+                    timestamp: now.getTime(),
                     count: items.length
                 });
 
@@ -912,7 +932,7 @@
         $(document).on('click', '.del-btn', function (e) {
             e.preventDefault();
             e.stopPropagation();
-            var index = $(this).parents(".layui-card").data('index');
+            var index = $(this).closest('.layui-card').data('index');
             deleteByIndex(index);
         });
 
@@ -935,7 +955,7 @@
                     content: $('.edit_box')
                 });
             } else {
-                var index = $(this).parents(".layui-card").data('index');
+                var index = $(this).closest('.layui-card').data('index');
                 editByIndex(index);
             }
         });
