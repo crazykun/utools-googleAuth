@@ -184,7 +184,7 @@
                     domCache[index] = {};
                 }
                 if (!domCache[index].$countdown) {
-                    domCache[index].$countdown = $card.find('.countdown-display');
+                    domCache[index].$countdown = $card.find('.countdown-text');
                 }
                 domCache[index].$countdown.text(left_time + 's');
 
@@ -306,7 +306,7 @@
         // 点击其他地方关闭帮助面板
         $(document).on('click', function (e) {
             if (!$(e.target).closest('.shortcuts-panel').length &&
-                !$(e.target).closest('.help-text').length) {
+                !$(e.target).closest('.help-btn').length) {
                 hideShortcutsPanel();
             }
         });
@@ -981,6 +981,13 @@
         $(".backup-btn").click(function (e) {
             e.preventDefault();
             showBackupManager();
+        });
+
+        // 快捷键帮助按钮
+        $(".help-btn").click(function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleShortcutsPanel();
         });
 
         // 备份管理中的导出当前数据按钮

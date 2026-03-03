@@ -1,4 +1,120 @@
 /* ==================== 布局 ==================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    overflow: hidden;
+}
+
+.main-container {
+    width: 100vw;
+    height: 100vh;
+    background-color: #F2F2F2;
+    position: relative;
+}
+
+.content-area {
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+    padding-bottom: 80px;
+    overflow-y: auto;
+}
+
+/* 底部操作按钮 - Mac Dock 风格 */
+.action-buttons {
+    position: fixed;
+    left: 50%;
+    bottom: 15px;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    z-index: 100;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    border: none;
+    background: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+    font-size: 20px;
+    position: relative;
+    transition: transform 0.15s ease, margin 0.15s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn:hover {
+    transform: scale(1.35) translateY(-8px);
+    background: #fff;
+    color: #1E9FFF;
+    box-shadow: 0 8px 20px rgba(30, 159, 255, 0.3);
+    margin: 0 8px;
+}
+
+.action-btn:active {
+    transform: scale(1.25) translateY(-6px);
+}
+
+/* 自定义 tooltip */
+.action-btn::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 8px;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    font-size: 12px;
+    white-space: nowrap;
+    border-radius: 6px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+.action-btn::after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 2px;
+    border: 5px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.75);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
+    pointer-events: none;
+}
+
+.action-btn:hover::before,
+.action-btn:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
 .layui-card {
     padding-left: 20px;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -20,12 +136,6 @@
 .layui-card.drag-over {
     border: 2px dashed #1E9FFF;
     transform: scale(1.02);
-}
-
-.layui-layout-admin .layui-body {
-    top: 0px;
-    padding: 20px;
-    background-color: #F2F2F2;
 }
 
 /* ==================== 卡片按钮 ==================== */
@@ -103,10 +213,6 @@
 /* ==================== 表单 ==================== */
 .edit_box {
     padding: 10px;
-}
-
-.layui-footer span {
-    float: right;
 }
 
 /* ==================== 进度条样式 ==================== */

@@ -11,33 +11,31 @@
 
 <body>
 
-    <div class="layui-layout layui-layout-admin">
-
-        <!-- 左侧区域 -->
-        <div class="layui-side layui-bg-black left-menu">
-            <div class="layui-side-scroll">
-                <ul class="layui-nav layui-nav-tree layui-nav-side" lay-filter="test">
-                    <li class="layui-nav-item layui-this"><a href="#">全部</a></li>
-                    <li class="layui-nav-item"><a href="javascript:;" class="add-btn">添加密钥</a></li>
-                    <li class="layui-nav-item"><a href="javascript:;" class="qrcode-btn">识别二维码</a></li>
-                    <li class="layui-nav-item"><a href="javascript:;" class="backup-btn">备份管理</a></li>
-                    <li class="layui-nav-item"><a href="javascript:;" class="set-btn">设置</a></li>
-                </ul>
-            </div>
-        </div>
-        <!-- 左侧区域 -->
-
+    <div class="main-container">
         <!-- 内容主体区域 -->
-        <div class="layui-body" id="view">
+        <div class="content-area" id="view">
             <!-- 自动渲染数据 -->
         </div>
         <!-- 内容主体区域 -->
 
-        <!-- 底部固定区域 -->
-        <div class="layui-footer">
-            <span class="help-text">按 <kbd>?</kbd> 查看快捷键 | 点击数字或 Alt+数字 复制</span>
+        <!-- 底部操作按钮 -->
+        <div class="action-buttons">
+            <button class="action-btn add-btn" data-tooltip="添加密钥 (A)">
+                <i class="layui-icon">&#xe654;</i>
+            </button>
+            <button class="action-btn qrcode-btn" data-tooltip="识别二维码 (Q)">
+                <i class="layui-icon">&#xe615;</i>
+            </button>
+            <button class="action-btn backup-btn" data-tooltip="备份管理">
+                <i class="layui-icon">&#xe658;</i>
+            </button>
+            <button class="action-btn help-btn" data-tooltip="帮助 (?)">
+                <i class="layui-icon">&#xe607;</i>
+            </button>
+            <button class="action-btn set-btn" data-tooltip="设置 (S)">
+                <i class="layui-icon">&#xe614;</i>
+            </button>
         </div>
-        <!-- 底部固定区域 -->
     </div>
 
     <!-- 快捷键帮助面板 -->
@@ -170,7 +168,7 @@ otpauth://totp/账号名称?secret=XXXXXXXX&issuer=服务名</pre>
                         <div class="layui-elem-quote" style="position: relative;">
                             <p class="num copy-btn" title="点击复制">000000</p>
                             <div class="card-info">
-                                <span class="countdown-text" id="countdown<% index %>">30s</span>
+                                <span class="countdown-text" id="countdown<% index %>"><% item.max || 30 %>s</span>
                                 <%# if(index < 9){ %>
                                 <span class="shortcut-text">Alt+<% index + 1 %></span>
                                 <%# } %>
