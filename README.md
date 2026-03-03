@@ -14,6 +14,8 @@ googleAuthenticator 即谷歌动态口令, 也叫two-factor authentication (2FA)
 
 # screenshot
 ![截图](https://raw.githubusercontent.com/crazykun/utools-googleAuth/main/img/screenshot.png)
+![截图](https://raw.githubusercontent.com/crazykun/utools-googleAuth/main/img/screenshot-backup.png)
+![截图](https://raw.githubusercontent.com/crazykun/utools-googleAuth/main/img/screenshot-key.png)
 ![截图](https://raw.githubusercontent.com/crazykun/utools-googleAuth/main/img/screenshot-set.png)
 # other
 [utools版本]googleAuth for utools
