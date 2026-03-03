@@ -1181,6 +1181,9 @@
         utools.onPluginEnter(function ({ code, type, payload, option }) {
             if (code === 'qrcode') {
                 qrcodeIdentify(payload);
+            } else {
+                // 重新启动定时器（从后台恢复时）
+                startGlobalTimer();
             }
         });
 
