@@ -15,6 +15,7 @@
 ## 安装
 
 在 uTools 插件市场搜索 `googleAuth` 或 `Google身份验证器` 安装。
+[链接](https://u.tools/plugins/detail/Google%E4%BA%8C%E6%AC%A1%E8%BA%AB%E4%BB%BD%E9%AA%8C%E8%AF%81%E5%99%A8/?c=dhknilkfxl)
 
 ## 使用方法
 
